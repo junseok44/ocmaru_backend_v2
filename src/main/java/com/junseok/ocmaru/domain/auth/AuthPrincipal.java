@@ -1,6 +1,7 @@
 package com.junseok.ocmaru.domain.auth;
 
 import com.junseok.ocmaru.domain.auth.dto.LocalLoginResponse;
+import com.junseok.ocmaru.domain.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,14 @@ public class AuthPrincipal {
       response.getId(),
       response.getEmail(),
       response.getDisplayName()
+    );
+  }
+
+  public static AuthPrincipal from(User user) {
+    return new AuthPrincipal(
+      user.getId(),
+      user.getEmail(),
+      user.getDisplayName()
     );
   }
 }

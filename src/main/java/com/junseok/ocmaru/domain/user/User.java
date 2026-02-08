@@ -35,7 +35,7 @@ public class User extends BaseEntity {
 
   @Getter
   @Setter
-  @Column(nullable = false, length = 20)
+  @Column(nullable = false, length = 100)
   private String displayName;
 
   @Getter
