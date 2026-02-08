@@ -11,6 +11,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+  private final OAuth2Config.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
+  public SecurityConfig(
+    OAuth2Config.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler
+  ) {
+    this.oAuth2AuthenticationSuccessHandler =
+      oAuth2AuthenticationSuccessHandler;
+  }
+
   /** 세션 기반 인증: 로그인 성공 시 SecurityContext가 HttpSession에 저장됨. */
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -19,20 +28,20 @@ public class SecurityConfig {
       .csrf(AbstractHttpConfigurer::disable)
       .authorizeHttpRequests(auth ->
         auth
-          .requestMatchers("/auth/**")
+          .requestMatchers(
+            "/auth/**",
+            "/oauth2/authorization/**",
+            "/login/oauth2/code/**"
+          )
           .permitAll()
           .requestMatchers("/admin/**")
           .hasAnyRole("ADMIN")
           .anyRequest()
           .authenticated()
-      );
-    // .formLogin(form ->
-    //   form
-    //     .loginPage("/login") // 커스텀 로그인 페이지 경로
-    //     .loginProcessingUrl("/login-proc") // <form action="..."> 에 들어갈 URL
-    //     .defaultSuccessUrl("/main", true) // 로그인 성공 시 이동할 곳
-    //     .permitAll()
-    // );
+      )
+      .oauth2Login(oauth2 -> {
+        oauth2.successHandler(oAuth2AuthenticationSuccessHandler);
+      });
     return http.build();
   }
 }
