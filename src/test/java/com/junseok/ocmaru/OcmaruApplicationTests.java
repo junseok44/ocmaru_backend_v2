@@ -41,9 +41,9 @@ class OcmaruApplicationTests {
       .createQuery("select o from Opinion o", Opinion.class)
       .getResultList();
 
-    Cluster cluster = new Cluster(opinions, "dfd", "dfdf", 23);
+    // Cluster cluster = new Cluster(opinions, "dfd", "dfdf", 23);
 
-    em.persist(cluster);
+    // em.persist(cluster);
 
     Agenda agenda = new Agenda("title", "desc", findUser);
 
