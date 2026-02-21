@@ -25,14 +25,12 @@ public class Cluster extends BaseEntity {
   @Getter
   private Agenda agenda;
 
-  @OneToMany(mappedBy = "cluster")
-  @Getter
-  private List<Opinion> opinions = new ArrayList<>();
-
   @Column(nullable = false)
+  @Getter
   private String title;
 
   @Column(nullable = false)
+  @Getter
   private String summary;
 
   @Enumerated
@@ -51,13 +49,7 @@ public class Cluster extends BaseEntity {
   @Getter
   private List<String> tags = new ArrayList<>();
 
-  public Cluster(
-    List<Opinion> opinions,
-    String title,
-    String summary,
-    Integer similarity
-  ) {
-    this.opinions = opinions;
+  public Cluster(String title, String summary, Integer similarity) {
     this.title = title;
     this.summary = summary;
     this.similarity = similarity;
