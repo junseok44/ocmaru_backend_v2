@@ -34,7 +34,11 @@ public class Opinion extends BaseEntity {
   @Getter
   private OpinionType type = OpinionType.TEXT;
 
-  @OneToMany(mappedBy = "opinion", cascade = CascadeType.ALL)
+  @OneToMany(
+    mappedBy = "opinion",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
   private List<OpinionCluster> opinionClusters = new ArrayList<>();
 
   @Column(nullable = false)
@@ -67,6 +71,11 @@ public class Opinion extends BaseEntity {
 
   public void addCluster(Cluster cluster) {
     opinionClusters.add(new OpinionCluster(cluster, this));
+  }
+
+  public void removeCluster(Cluster cluster) {
+    opinionClusters.removeIf(c -> c.getCluster().getId().equals(cluster.getId())
+    );
   }
 
   /** PATCH용: DTO에 null이 아닌 필드만 반영 */

@@ -24,10 +24,12 @@ public class OpinionCluster extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CLUSTER_ID")
+  @Getter
   private Cluster cluster;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OPINION_ID")
+  @Getter
   private Opinion opinion;
 
   public OpinionCluster(Cluster cluster, Opinion opinion) {
