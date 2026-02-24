@@ -1,8 +1,8 @@
 package com.junseok.ocmaru.domain.cluster.entity;
 
 import com.junseok.ocmaru.domain.agenda.entity.Agenda;
+import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.enums.ClusterStatus;
-import com.junseok.ocmaru.domain.opinion.entity.Opinion;
 import com.junseok.ocmaru.global.entity.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -12,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -49,9 +48,24 @@ public class Cluster extends BaseEntity {
   @Getter
   private List<String> tags = new ArrayList<>();
 
-  public Cluster(String title, String summary, Integer similarity) {
+  public Cluster(
+    String title,
+    String summary,
+    Integer similarity,
+    Integer opinionCount
+  ) {
     this.title = title;
     this.summary = summary;
     this.similarity = similarity;
+    this.opinionCount = opinionCount;
+  }
+
+  public void update(ClusterUpdateRequestDto dto) {
+    if (dto.title() != null) {
+      this.title = dto.title();
+    }
+    if (dto.summary() != null) {
+      this.summary = dto.summary();
+    }
   }
 }

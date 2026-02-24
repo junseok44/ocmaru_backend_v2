@@ -16,6 +16,26 @@ public record OpinionResponseDto(
   boolean likedByMe, // 내가 좋아요 했는지
   LocalDateTime createdAt
 ) {
+  public static OpinionResponseDto from(Opinion op) {
+    return new OpinionResponseDto(
+      op.getId(),
+      op.getUser().getId(),
+      new OpinionUserDto(
+        op.getUser().getId(),
+        op.getUser().getEmail(),
+        op.getUser().getDisplayName(),
+        op.getUser().getAvatarUrl()
+      ),
+      op.getType(),
+      op.getContent(),
+      op.getVoiceUrl(),
+      op.getLikes(),
+      0,
+      false,
+      op.getCreatedAt()
+    );
+  }
+
   public static OpinionResponseDto toDto(
     Opinion op,
     int commentCount,
