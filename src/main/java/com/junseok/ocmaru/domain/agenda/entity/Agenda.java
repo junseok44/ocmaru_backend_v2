@@ -45,5 +45,17 @@ public class Agenda extends BaseEntity {
     this.title = title;
     this.description = description;
     this.writer = writer;
+    this.agendaReferences = new AgendaReferences();
+  }
+
+  public void updateTitleAndDescription(String title, String description) {
+    if (title != null) this.title = title;
+    if (description != null) this.description = description;
+  }
+
+  public void updateReferences(java.util.List<String> referenceLinks, java.util.List<String> referenceFiles) {
+    if (this.agendaReferences == null) this.agendaReferences = new AgendaReferences();
+    if (referenceLinks != null) this.agendaReferences.setReferenceLinks(referenceLinks);
+    if (referenceFiles != null) this.agendaReferences.setReferenceFiles(referenceFiles);
   }
 }

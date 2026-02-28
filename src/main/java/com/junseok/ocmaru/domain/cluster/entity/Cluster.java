@@ -60,6 +60,20 @@ public class Cluster extends BaseEntity {
     this.opinionCount = opinionCount;
   }
 
+  public Cluster(
+    Agenda agenda,
+    String title,
+    String summary,
+    Integer similarity,
+    Integer opinionCount
+  ) {
+    this.agenda = agenda;
+    this.title = title;
+    this.summary = summary;
+    this.similarity = similarity;
+    this.opinionCount = opinionCount;
+  }
+
   public void update(ClusterUpdateRequestDto dto) {
     if (dto.title() != null) {
       this.title = dto.title();
