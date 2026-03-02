@@ -24,4 +24,8 @@ public interface AgendaBookmarkRepository
     @Param("userId") Long userId,
     Pageable pageable
   );
+
+  long countByUserId(Long userId);
+
+  void deleteByUserId(Long userId);
 }

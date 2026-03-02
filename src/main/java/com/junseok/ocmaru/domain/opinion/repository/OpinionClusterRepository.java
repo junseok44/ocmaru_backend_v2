@@ -18,4 +18,6 @@ public interface OpinionClusterRepository
   List<Opinion> findOpinionsWithUserByClusterId(
     @Param("clusterId") Long clusterId
   );
+
+  void deleteByOpinionIdIn(List<Long> opinionIds);
 }

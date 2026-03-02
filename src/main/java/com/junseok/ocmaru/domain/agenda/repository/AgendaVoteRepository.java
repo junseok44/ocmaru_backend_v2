@@ -15,4 +15,6 @@ public interface AgendaVoteRepository
   Optional<AgendaVotes> findByAgendaIdAndUserId(Long agendaId, Long userId);
 
   void deleteByAgendaIdAndUserId(Long agendaId, Long userId);
+
+  void deleteByUserId(Long userId);
 }

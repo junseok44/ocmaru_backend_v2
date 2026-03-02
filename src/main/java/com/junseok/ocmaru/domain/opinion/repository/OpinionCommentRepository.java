@@ -20,4 +20,14 @@ public interface OpinionCommentRepository
   public List<OpinionComment> getOpinionCommentsWithUser(
     @Param("opinionId") Long opinionId
   );
+
+  @Query("select oc.id from OpinionComment oc where oc.user.id = :userId")
+  List<Long> findIdsByUserId(@Param("userId") Long userId);
+
+  @Query(
+    "select count(oc) from OpinionComment oc join oc.opinion o join o.opinionClusters c where c.cluster.agenda.id = :agendaId"
+  )
+  long countByAgendaId(@Param("agendaId") Long agendaId);
+
+  void deleteByUserId(Long userId);
 }

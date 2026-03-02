@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClusterRepository extends JpaRepository<Cluster, Long> {
   List<Cluster> findByAgendaId(Long agendaId);
+
+  List<Cluster> findTop5ByOrderByCreatedAtDesc();
 }
