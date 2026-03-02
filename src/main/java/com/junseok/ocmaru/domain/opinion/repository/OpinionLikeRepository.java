@@ -25,4 +25,10 @@ public interface OpinionLikeRepository
     @Param("opinionId") Long opinionId,
     @Param("userId") Long userId
   );
+
+  long countByUserId(Long userId);
+
+  void deleteByUserId(Long userId);
+
+  void deleteByOpinionIdIn(List<Long> opinionIds);
 }

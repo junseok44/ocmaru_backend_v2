@@ -1,6 +1,9 @@
 package com.junseok.ocmaru.domain.user;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,4 +19,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Param("provider") AuthProvider provider,
     @Param("providerId") String providerId
   );
+
+  long countByCreatedAtGreaterThanEqual(LocalDateTime dateTime);
+
+  long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+  @Query(
+    "select u from User u where (:search is null or lower(u.email) like lower(concat('%', :search, '%')) or lower(u.displayName) like lower(concat('%', :search, '%'))) order by u.createdAt desc"
+  )
+  List<User> searchUsers(@Param("search") String search, Pageable pageable);
 }

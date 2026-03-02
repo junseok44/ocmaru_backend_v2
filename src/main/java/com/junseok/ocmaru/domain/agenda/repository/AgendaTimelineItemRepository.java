@@ -14,4 +14,6 @@ public interface AgendaTimelineItemRepository
   List<AgendaTimelineItem> findByAgendaIdOrderByCreatedAtAsc(
     @Param("agendaId") Long agendaId
   );
+
+  void deleteByUserId(Long userId);
 }
