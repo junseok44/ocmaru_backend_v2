@@ -1,6 +1,7 @@
 package com.junseok.ocmaru.domain.agenda.service;
 
 import com.junseok.ocmaru.domain.agenda.dto.AgendaCreateRequestDto;
+import com.junseok.ocmaru.domain.agenda.dto.AgendaFileUploadResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaFilesUpdateRequestDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaUpdateRequestDto;
@@ -26,6 +27,7 @@ import com.junseok.ocmaru.domain.opinion.repository.OpinionRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import com.junseok.ocmaru.global.exception.NotFoundException;
+import com.junseok.ocmaru.global.storage.PublicObjectStorageService;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +49,7 @@ public class AgendaService {
   private final OpinionRepository opinionRepository;
   private final OpinionClusterRepository opinionClusterRepository;
   private final UserRepository userRepository;
+  private final PublicObjectStorageService publicObjectStorageService;
 
   @Transactional(readOnly = true)
   public List<AgendaResponseDto> getMyOpinions(
@@ -173,6 +177,22 @@ public class AgendaService {
       dto.referenceFiles()
     );
     return AgendaResponseDto.from(agenda);
+  }
+
+  @Transactional
+  public AgendaFileUploadResponseDto uploadAgendaFile(Long id, MultipartFile file) {
+    Agenda agenda = agendaRepository
+      .findById(id)
+      .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
+
+    String publicUrl = publicObjectStorageService.uploadAgendaFile(id, file);
+    agenda.appendReferenceFile(publicUrl);
+
+    return new AgendaFileUploadResponseDto(
+      true,
+      publicUrl,
+      AgendaResponseDto.from(agenda)
+    );
   }
 
   @Transactional

@@ -58,4 +58,9 @@ public class Agenda extends BaseEntity {
     if (referenceLinks != null) this.agendaReferences.setReferenceLinks(referenceLinks);
     if (referenceFiles != null) this.agendaReferences.setReferenceFiles(referenceFiles);
   }
+
+  public void appendReferenceFile(String fileUrl) {
+    if (this.agendaReferences == null) this.agendaReferences = new AgendaReferences();
+    this.agendaReferences.addReferenceFile(fileUrl);
+  }
 }

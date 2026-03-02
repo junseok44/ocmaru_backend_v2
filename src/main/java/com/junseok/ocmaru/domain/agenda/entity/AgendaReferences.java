@@ -35,4 +35,11 @@ public class AgendaReferences {
   public void setReferenceFiles(List<String> referenceFiles) {
     this.referenceFiles = referenceFiles != null ? referenceFiles : new ArrayList<>();
   }
+
+  public void addReferenceFile(String fileUrl) {
+    if (fileUrl == null || fileUrl.isBlank()) {
+      return;
+    }
+    this.referenceFiles.add(fileUrl);
+  }
 }

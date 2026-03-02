@@ -1,7 +1,7 @@
 package com.junseok.ocmaru.domain.agenda.controller;
 
 import com.junseok.ocmaru.domain.agenda.dto.AgendaCreateRequestDto;
-import com.junseok.ocmaru.domain.agenda.dto.AgendaFilesUpdateRequestDto;
+import com.junseok.ocmaru.domain.agenda.dto.AgendaFileUploadResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaUpdateRequestDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaVoteStatResponseDto;
@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/agendas")
@@ -108,13 +110,16 @@ public class AgendaController {
     return ResponseEntity.status(200).body(response);
   }
 
-  // TODO: implement file uploading.
-  @PatchMapping("/{id}/files")
-  public ResponseEntity<AgendaResponseDto> updateAgendaReferences(
+  @PostMapping("/{id}/files")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<AgendaFileUploadResponseDto> uploadAgendaFile(
     @PathVariable Long id,
-    @RequestBody @Valid AgendaFilesUpdateRequestDto dto
+    @RequestParam("file") MultipartFile file
   ) {
-    AgendaResponseDto response = agendaService.updateAgendaFiles(id, dto);
+    AgendaFileUploadResponseDto response = agendaService.uploadAgendaFile(
+      id,
+      file
+    );
     return ResponseEntity.status(200).body(response);
   }
 
