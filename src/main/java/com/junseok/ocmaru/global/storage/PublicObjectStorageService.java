@@ -5,13 +5,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@RequiredArgsConstructor
 public class PublicObjectStorageService {
 
   private final Path publicRootDir;
@@ -31,7 +29,12 @@ public class PublicObjectStorageService {
       ? "file"
       : Paths.get(file.getOriginalFilename()).getFileName().toString();
     String filename =
-      "agendas/" + agendaId + "/" + System.currentTimeMillis() + "-" + originalName;
+      "agendas/" +
+      agendaId +
+      "/" +
+      System.currentTimeMillis() +
+      "-" +
+      originalName;
     Path target = publicRootDir.resolve(filename).normalize();
 
     try {

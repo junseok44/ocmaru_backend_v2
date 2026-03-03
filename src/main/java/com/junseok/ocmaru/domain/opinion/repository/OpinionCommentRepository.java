@@ -16,7 +16,7 @@ public interface OpinionCommentRepository
     @Param("opinionIds") List<Long> opinionIds
   );
 
-  @Query("select oc OpinionComment oc join fetch oc.user user")
+  @Query("select oc from OpinionComment oc join fetch oc.user user")
   public List<OpinionComment> getOpinionCommentsWithUser(
     @Param("opinionId") Long opinionId
   );

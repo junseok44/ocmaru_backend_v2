@@ -13,7 +13,7 @@ public interface OpinionClusterRepository
   void deleteAllByClusterIdIn(@Param("clusterIds") List<Long> clusterIds);
 
   @Query(
-    "select op from OpinionCluster oc join fetch oc.opinion op join fetch op.user where oc.cluster.id = :clusterId"
+    "select op from OpinionCluster oc join oc.opinion op join op.user where oc.cluster.id = :clusterId"
   )
   List<Opinion> findOpinionsWithUserByClusterId(
     @Param("clusterId") Long clusterId
