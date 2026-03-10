@@ -5,11 +5,13 @@ import com.junseok.ocmaru.domain.user.User;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -83,7 +85,10 @@ public class JwtTokenService {
         user.isAdmin() ? List.of("ROLE_USER", "ROLE_ADMIN") : List.of("ROLE_USER")
       )
       .build();
-    return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+    return jwtEncoder
+      .encode(JwtEncoderParameters.from(jwsHeader, claims))
+      .getTokenValue();
   }
 
   private Long parseUserId(String value) {
