@@ -1,8 +1,8 @@
 package com.junseok.ocmaru.global.config;
 
-import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.domain.auth.OAuthUserService;
 import com.junseok.ocmaru.domain.user.User;
+import com.junseok.ocmaru.global.security.JwtTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -11,10 +11,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
@@ -22,6 +19,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * OAuth2 클라이언트 등록 및 로그인 성공 처리.
@@ -40,6 +38,7 @@ public class OAuth2Config {
 
   private final OAuthProperties oAuthProperties;
   private final OAuthUserService oAuthUserService;
+  private final JwtTokenService jwtTokenService;
 
   @Bean
   public ClientRegistrationRepository clientRegistrationRepository() {
@@ -97,22 +96,32 @@ public class OAuth2Config {
 
   @Bean
   public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
-    return new OAuth2AuthenticationSuccessHandler(oAuthUserService);
+    return new OAuth2AuthenticationSuccessHandler(
+      oAuthProperties,
+      oAuthUserService,
+      jwtTokenService
+    );
   }
 
   /**
-   * OAuth2 로그인 성공 시 DB 사용자 조회/생성 후 AuthPrincipal로 세션에 넣고 "/"로 리다이렉트.
+   * OAuth2 로그인 성공 시 DB 사용자 조회/생성 후 JWT를 발급해서 프론트 로그인 페이지로 리다이렉트.
    */
   public static class OAuth2AuthenticationSuccessHandler
     extends SimpleUrlAuthenticationSuccessHandler {
 
+    private final OAuthProperties oAuthProperties;
     private final OAuthUserService oAuthUserService;
+    private final JwtTokenService jwtTokenService;
 
     public OAuth2AuthenticationSuccessHandler(
-      OAuthUserService oAuthUserService
+      OAuthProperties oAuthProperties,
+      OAuthUserService oAuthUserService,
+      JwtTokenService jwtTokenService
     ) {
+      this.oAuthProperties = oAuthProperties;
       this.oAuthUserService = oAuthUserService;
-      setDefaultTargetUrl("/");
+      this.jwtTokenService = jwtTokenService;
+      setDefaultTargetUrl("/login");
     }
 
     @Override
@@ -121,8 +130,6 @@ public class OAuth2Config {
       HttpServletResponse response,
       Authentication authentication
     ) throws IOException {
-      System.out.println(authentication.getPrincipal());
-
       if (!(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
         getRedirectStrategy()
           .sendRedirect(request, response, getDefaultTargetUrl());
@@ -138,16 +145,18 @@ public class OAuth2Config {
 
       try {
         User user = oAuthUserService.findOrCreate(oauth2User, registrationId);
-        AuthPrincipal principal = AuthPrincipal.from(user);
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        var newAuth = new UsernamePasswordAuthenticationToken(
-          principal,
-          null,
-          authorities
-        );
-        SecurityContextHolder.getContext().setAuthentication(newAuth);
+        String accessToken = jwtTokenService.createAccessToken(user);
+        String refreshToken = jwtTokenService.createRefreshToken(user);
+        String redirectUrl = UriComponentsBuilder
+          .fromUriString(oAuthProperties.getBaseUrlNormalized() + "/login")
+          .queryParam("accessToken", accessToken)
+          .queryParam("refreshToken", refreshToken)
+          .build()
+          .toUriString();
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        return;
       } catch (Exception e) {
-        // 실패 시 그냥 "/" 로 보냄 (필요 시 로그)
+        // 실패 시 토큰 발급 없이 기본 로그인 화면으로 이동
       }
 
       getRedirectStrategy()

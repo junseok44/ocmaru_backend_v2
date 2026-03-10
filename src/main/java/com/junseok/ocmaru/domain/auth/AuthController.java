@@ -2,20 +2,17 @@ package com.junseok.ocmaru.domain.auth;
 
 import com.junseok.ocmaru.domain.auth.dto.AuthMeResponse;
 import com.junseok.ocmaru.domain.auth.dto.AuthProvidersResponse;
+import com.junseok.ocmaru.domain.auth.dto.AuthTokenResponse;
 import com.junseok.ocmaru.domain.auth.dto.LocalLoginRequestDto;
-import com.junseok.ocmaru.domain.auth.dto.LocalLoginResponse;
 import com.junseok.ocmaru.domain.auth.dto.LocalRegisterRequestDto;
 import com.junseok.ocmaru.domain.auth.dto.LocalRegisterResponse;
+import com.junseok.ocmaru.domain.auth.dto.TokenRefreshRequestDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import com.junseok.ocmaru.global.config.OAuthProperties;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -83,25 +80,18 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LocalLoginResponse> login(
+  public ResponseEntity<AuthTokenResponse> login(
     @Valid @RequestBody LocalLoginRequestDto dto
   ) {
-    LocalLoginResponse body = authService.localLogin(dto);
+    AuthTokenResponse body = authService.localLogin(dto);
+    return ResponseEntity.ok(body);
+  }
 
-    AuthPrincipal principal = AuthPrincipal.from(body);
-    List<SimpleGrantedAuthority> authorities = body.isAdmin()
-      ? List.of(
-        new SimpleGrantedAuthority("ROLE_USER"),
-        new SimpleGrantedAuthority("ROLE_ADMIN")
-      )
-      : List.of(new SimpleGrantedAuthority("ROLE_USER"));
-    var auth = new UsernamePasswordAuthenticationToken(
-      principal,
-      null,
-      authorities
-    );
-    SecurityContextHolder.getContext().setAuthentication(auth);
-
+  @PostMapping("/refresh")
+  public ResponseEntity<AuthTokenResponse> refresh(
+    @Valid @RequestBody TokenRefreshRequestDto dto
+  ) {
+    AuthTokenResponse body = authService.refresh(dto.refreshToken());
     return ResponseEntity.ok(body);
   }
 }
