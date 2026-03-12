@@ -36,6 +36,18 @@ public class AgendaController {
 
   private final AgendaService agendaService;
 
+  @GetMapping("")
+  public ResponseEntity<List<AgendaResponseDto>> getAllAgendas(
+    @RequestParam(required = false, defaultValue = "0") Integer offset,
+    @RequestParam(required = false, defaultValue = "10") Integer limit
+  ) {
+    List<AgendaResponseDto> response = agendaService.getAllAgendas(
+      offset,
+      limit
+    );
+    return ResponseEntity.status(200).body(response);
+  }
+
   @GetMapping("/my-opinions")
   public ResponseEntity<List<AgendaResponseDto>> getMyOpinions(
     @CurrentUser AuthPrincipal user,

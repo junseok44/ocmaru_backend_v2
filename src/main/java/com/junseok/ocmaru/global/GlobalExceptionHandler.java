@@ -9,10 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @RestControllerAdvice
@@ -84,6 +86,24 @@ public class GlobalExceptionHandler {
     return ResponseEntity
       .status(HttpStatus.FORBIDDEN)
       .body(new ErrorResult("FORBIDDEN", "접근 권한이 없습니다."));
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResult> handleNoResource(NoResourceFoundException e) {
+    log.warn("No resource found: {}", e.getMessage());
+    return ResponseEntity
+      .status(HttpStatus.NOT_FOUND)
+      .body(new ErrorResult("NOT_FOUND", "요청한 리소스를 찾을 수 없습니다."));
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ErrorResult> handleMethodNotSupported(
+    HttpRequestMethodNotSupportedException e
+  ) {
+    log.warn("Method not supported: {}", e.getMessage());
+    return ResponseEntity
+      .status(HttpStatus.METHOD_NOT_ALLOWED)
+      .body(new ErrorResult("METHOD_NOT_ALLOWED", e.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)

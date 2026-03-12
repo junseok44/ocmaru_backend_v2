@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface AgendaRepository extends JpaRepository<Agenda, Long> {
   List<Agenda> findAllByWriterId(Long writerId);
+  List<Agenda> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
   @Query(
     "select distinct a from OpinionCluster oc join oc.cluster c join c.agenda a join oc.opinion o where o.user.id = :userId order by a.createdAt desc"

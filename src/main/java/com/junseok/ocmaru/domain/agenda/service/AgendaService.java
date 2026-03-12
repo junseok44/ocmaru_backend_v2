@@ -52,6 +52,18 @@ public class AgendaService {
   private final PublicObjectStorageService publicObjectStorageService;
 
   @Transactional(readOnly = true)
+  public List<AgendaResponseDto> getAllAgendas(Integer offset, Integer limit) {
+    int pageSize = limit != null && limit > 0 ? limit : 10;
+    int pageIndex = offset != null && pageSize > 0 ? offset / pageSize : 0;
+    Pageable pageable = PageRequest.of(pageIndex, pageSize);
+    return agendaRepository
+      .findAllByOrderByCreatedAtDesc(pageable)
+      .stream()
+      .map(AgendaResponseDto::from)
+      .toList();
+  }
+
+  @Transactional(readOnly = true)
   public List<AgendaResponseDto> getMyOpinions(
     Long userId,
     Integer offset,
