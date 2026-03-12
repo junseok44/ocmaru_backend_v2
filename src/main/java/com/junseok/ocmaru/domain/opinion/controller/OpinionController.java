@@ -4,7 +4,6 @@ import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionCreateRequestDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionSearchCondition;
-import com.junseok.ocmaru.domain.opinion.dto.OpinionSearchRequestDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionSearchResponseDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionTranscribeResponseDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionUpdateRequestDto;
@@ -22,6 +21,7 @@ import com.junseok.ocmaru.global.annotation.CurrentUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -55,8 +55,10 @@ public class OpinionController {
   // 전체 오피니언 불러오기.
   @GetMapping("")
   public ResponseEntity<OpinionSearchResponseDto> searchAllOpinions(
-    OpinionSearchRequestDto request
+    @RequestParam(required = false, defaultValue = "0") Integer offset,
+    @RequestParam(required = false, defaultValue = "10") Integer limit
   ) {
+    System.out.println("offset: " + offset);
     OpinionSearchCondition cond = new OpinionSearchCondition(
       null,
       null,
@@ -67,8 +69,8 @@ public class OpinionController {
 
     List<OpinionResponseDto> opinions = opinionService.searchOpinions(
       cond,
-      request.limit(),
-      request.offset(),
+      limit,
+      offset,
       null,
       false,
       true
@@ -81,9 +83,11 @@ public class OpinionController {
 
   // 클러스터링 되지 않은 의견들 불러오기.
   @GetMapping("/unclustered")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionSearchResponseDto> searchUnclusteredOpinions(
     @CurrentUser AuthPrincipal user,
-    OpinionSearchRequestDto request
+    @RequestParam(required = false, defaultValue = "0") Integer offset,
+    @RequestParam(required = false, defaultValue = "10") Integer limit
   ) {
     OpinionSearchCondition cond = new OpinionSearchCondition(
       null,
@@ -95,8 +99,8 @@ public class OpinionController {
 
     List<OpinionResponseDto> opinions = opinionService.searchOpinions(
       cond,
-      request.limit(),
-      request.offset(),
+      limit,
+      offset,
       null,
       false,
       true
@@ -109,9 +113,11 @@ public class OpinionController {
 
   // 내가 쓴 opinion들 불러오기.
   @GetMapping("/my")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionSearchResponseDto> searchMyOpinions(
     @CurrentUser AuthPrincipal user,
-    OpinionSearchRequestDto request
+    @RequestParam(required = false, defaultValue = "0") Integer offset,
+    @RequestParam(required = false, defaultValue = "10") Integer limit
   ) {
     OpinionSearchCondition cond = new OpinionSearchCondition(
       user.getId(),
@@ -123,8 +129,8 @@ public class OpinionController {
 
     List<OpinionResponseDto> opinions = opinionService.searchOpinions(
       cond,
-      request.limit(),
-      request.offset(),
+      limit,
+      offset,
       null,
       false,
       true
@@ -137,9 +143,11 @@ public class OpinionController {
 
   // 내가 좋아요 한 거 불러오기.
   @GetMapping("/liked")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionSearchResponseDto> searchLikedOpinions(
     @CurrentUser AuthPrincipal user,
-    OpinionSearchRequestDto request
+    @RequestParam(required = false, defaultValue = "0") Integer offset,
+    @RequestParam(required = false, defaultValue = "10") Integer limit
   ) {
     OpinionSearchCondition cond = new OpinionSearchCondition(
       null,
@@ -151,8 +159,8 @@ public class OpinionController {
 
     List<OpinionResponseDto> opinions = opinionService.searchOpinions(
       cond,
-      request.limit(),
-      request.offset(),
+      limit,
+      offset,
       null,
       false,
       true
@@ -175,6 +183,7 @@ public class OpinionController {
   }
 
   @PostMapping("/transcribe")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionTranscribeResponseDto> transcribe(
     @CurrentUser AuthPrincipal user,
     @RequestParam("audio") MultipartFile audio
@@ -184,24 +193,31 @@ public class OpinionController {
   }
 
   @PostMapping("")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionResponseDto> createOpinion(
     @CurrentUser AuthPrincipal user,
     @RequestBody OpinionCreateRequestDto dto
   ) {
-    return ResponseEntity.status(200).body(null);
+    OpinionResponseDto response = opinionService.createOpinion(
+      user.getId(),
+      dto
+    );
+    return ResponseEntity.status(200).body(response);
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionResponseDto> updateOpinion(
     @PathVariable("id") Long opinionId,
     @RequestBody OpinionUpdateRequestDto dto
   ) {
-    opinionService.updateOpinion(opinionId, dto);
+    OpinionResponseDto response = opinionService.updateOpinion(opinionId, dto);
 
-    return ResponseEntity.status(200).body(null);
+    return ResponseEntity.status(200).body(response);
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteOpinion(
     @PathVariable("id") Long opinionId
   ) {
@@ -211,6 +227,7 @@ public class OpinionController {
   }
 
   @PostMapping("/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> likeOpinion(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long opinionId
@@ -221,6 +238,7 @@ public class OpinionController {
   }
 
   @DeleteMapping("/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> unlikeOpinion(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long opinionId
@@ -231,6 +249,7 @@ public class OpinionController {
   }
 
   @GetMapping("/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<OpinionLikedResponseDto> getOpinionLiked(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long opinionId
@@ -258,6 +277,7 @@ public class OpinionController {
   }
 
   @PostMapping("/{id}/comments")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> createOpinionComment(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long opinionId,
@@ -269,6 +289,7 @@ public class OpinionController {
   }
 
   @PatchMapping("/comments/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> updateOpinionComment(
     @PathVariable("id") Long commentId,
     @CurrentUser AuthPrincipal user,
@@ -280,6 +301,7 @@ public class OpinionController {
   }
 
   @DeleteMapping("/comments/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteOpinionComment(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long commentId
@@ -290,6 +312,7 @@ public class OpinionController {
   }
 
   @PostMapping("/comments/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> likeOpinionComment(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long commentId
@@ -300,6 +323,7 @@ public class OpinionController {
   }
 
   @DeleteMapping("/comments/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> unlikeOpinionComment(
     @CurrentUser AuthPrincipal user,
     @PathVariable("id") Long commentId

@@ -124,7 +124,7 @@ public class OpinionService {
 
     opinionRepository.save(newOpinion);
 
-    return OpinionResponseDto.toDto(null, 0, false);
+    return OpinionResponseDto.toDto(newOpinion, 0, false);
   }
 
   public OpinionResponseDto updateOpinion(
