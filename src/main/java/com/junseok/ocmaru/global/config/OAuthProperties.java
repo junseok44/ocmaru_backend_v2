@@ -24,12 +24,28 @@ public class OAuthProperties {
    */
   private String baseUrl = "http://localhost:8080";
 
+  /**
+   * OAuth 로그인 성공 후 프런트엔드로 리다이렉트할 기준 URL.
+   * 예: 개발 환경 http://localhost:5173, 운영 환경 https://example.com
+   */
+  private String frontendRedirectUrl = "http://localhost:8080";
+
   /** 콜백 URL 등에 쓸 때 사용 (끝 슬래시 제거). */
   public String getBaseUrlNormalized() {
     if (baseUrl == null || baseUrl.isBlank()) {
       return "http://localhost:8080";
     }
     return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+  }
+
+  /** 프런트 리다이렉트 URL 정규화 (끝 슬래시 제거). */
+  public String getFrontendRedirectUrlNormalized() {
+    if (frontendRedirectUrl == null || frontendRedirectUrl.isBlank()) {
+      return "http://localhost:8080";
+    }
+    return frontendRedirectUrl.endsWith("/")
+      ? frontendRedirectUrl.substring(0, frontendRedirectUrl.length() - 1)
+      : frontendRedirectUrl;
   }
 
   private Google google = new Google();

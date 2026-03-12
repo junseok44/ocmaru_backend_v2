@@ -35,7 +35,13 @@ public class SecurityConfig {
       .authorizeHttpRequests(auth ->
         auth
           .requestMatchers(
-            "/auth/**",
+            "/",
+            "/index.html",
+            "/assets/**",
+            "/*.png",
+            "/*.svg",
+            "/*.ico",
+            "/api/auth/**",
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
             "/v3/api-docs/**",
@@ -43,16 +49,20 @@ public class SecurityConfig {
             "/swagger-ui.html"
           )
           .permitAll()
-          .requestMatchers("/admin/**")
+          .requestMatchers("/api/admin/**")
           .hasAnyRole("ADMIN")
+          // .requestMatchers("/api/**")
+          // .authenticated()
           .anyRequest()
-          .authenticated()
+          .permitAll()
       )
       .oauth2Login(oauth2 -> {
         oauth2.successHandler(oAuth2AuthenticationSuccessHandler);
       })
       .oauth2ResourceServer(oauth2 ->
-        oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+        oauth2.jwt(jwt ->
+          jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
+        )
       );
     return http.build();
   }

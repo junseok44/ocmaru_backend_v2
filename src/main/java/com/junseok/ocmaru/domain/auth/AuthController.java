@@ -10,6 +10,7 @@ import com.junseok.ocmaru.domain.auth.dto.TokenRefreshRequestDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import com.junseok.ocmaru.global.config.OAuthProperties;
 import jakarta.validation.Valid;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
 @RequestMapping("/auth")
@@ -49,25 +49,25 @@ public class AuthController {
 
   /** Google OAuth 시작 (활성화된 경우에만). */
   @GetMapping("/google")
-  public ResponseEntity<Void> google(UriComponentsBuilder uriBuilder) {
+  public ResponseEntity<Void> google() {
     if (!oAuthProperties.isGoogleEnabled()) {
       return ResponseEntity.notFound().build();
     }
     return ResponseEntity
       .status(HttpStatus.FOUND)
-      .location(uriBuilder.path("/oauth2/authorization/google").build().toUri())
+      .location(URI.create("/oauth2/authorization/google"))
       .build();
   }
 
   /** Kakao OAuth 시작 (활성화된 경우에만). */
   @GetMapping("/kakao")
-  public ResponseEntity<Void> kakao(UriComponentsBuilder uriBuilder) {
+  public ResponseEntity<Void> kakao() {
     if (!oAuthProperties.isKakaoEnabled()) {
       return ResponseEntity.notFound().build();
     }
     return ResponseEntity
       .status(HttpStatus.FOUND)
-      .location(uriBuilder.path("/oauth2/authorization/kakao").build().toUri())
+      .location(URI.create("/oauth2/authorization/kakao"))
       .build();
   }
 
