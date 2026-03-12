@@ -53,7 +53,7 @@ public class OpinionController {
   // 왜냐하면
 
   // 전체 오피니언 불러오기.
-  @GetMapping("/")
+  @GetMapping("")
   public ResponseEntity<OpinionSearchResponseDto> searchAllOpinions(
     OpinionSearchRequestDto request
   ) {
@@ -183,7 +183,7 @@ public class OpinionController {
     return ResponseEntity.ok(new OpinionTranscribeResponseDto(text));
   }
 
-  @PostMapping("/")
+  @PostMapping("")
   public ResponseEntity<OpinionResponseDto> createOpinion(
     @CurrentUser AuthPrincipal user,
     @RequestBody OpinionCreateRequestDto dto
