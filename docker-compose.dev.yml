@@ -1,6 +1,6 @@
 services:
   server:
-    image: eclipse-temurin:17-jdk-alpine
+    image: eclipse-temurin:17-jdk-jammy
     working_dir: /workspace/server
     command: sh -c "chmod +x ./gradlew && ./gradlew bootRun --args='--spring.profiles.active=local'"
     ports:
@@ -8,15 +8,19 @@ services:
     volumes:
       - ../server:/workspace/server
       - gradle-cache:/root/.gradle
+    environment:
+      - BASE_URL=http://localhost:8080
+      - FRONTEND_URL=http://localhost:5173
 
   client:
-    image: node:20-alpine
+    image: node:20-bookworm-slim
     working_dir: /workspace/client
     command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
     ports:
       - "5173:5173"
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_PROXY_TARGET=http://server:8080
     volumes:
       - ../client:/workspace/client
       - client-node-modules:/workspace/client/node_modules

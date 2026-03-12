@@ -51,8 +51,8 @@ public class SecurityConfig {
           .permitAll()
           .requestMatchers("/api/admin/**")
           .hasAnyRole("ADMIN")
-          .requestMatchers("/api/**")
-          .authenticated()
+          // .requestMatchers("/api/**")
+          // .authenticated()
           .anyRequest()
           .permitAll()
       )
@@ -60,7 +60,9 @@ public class SecurityConfig {
         oauth2.successHandler(oAuth2AuthenticationSuccessHandler);
       })
       .oauth2ResourceServer(oauth2 ->
-        oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+        oauth2.jwt(jwt ->
+          jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
+        )
       );
     return http.build();
   }

@@ -58,12 +58,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     registry.addViewController("/").setViewName("forward:/index.html");
     registry
       .addViewController(
-        "/{first:^(?!api$|oauth2$|login$|swagger-ui$|v3$|public-objects$|assets$|index\\.html$)[^.]+$}"
+        "/{first:^(?!api$|oauth2$|swagger-ui$|v3$|public-objects$|assets$|index\\.html$)[^.]+$}"
       )
       .setViewName("forward:/index.html");
     registry
       .addViewController(
-        "/{first:^(?!api$|oauth2$|login$|swagger-ui$|v3$|public-objects$|assets$)[^.]+}/**"
+        "/{first:^(?!api$|oauth2$|swagger-ui$|v3$|public-objects$|assets$)[^.]+}/**"
       )
       .setViewName("forward:/index.html");
   }

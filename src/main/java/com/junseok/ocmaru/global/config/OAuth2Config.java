@@ -121,7 +121,7 @@ public class OAuth2Config {
       this.oAuthProperties = oAuthProperties;
       this.oAuthUserService = oAuthUserService;
       this.jwtTokenService = jwtTokenService;
-      setDefaultTargetUrl("/login");
+      setDefaultTargetUrl(oAuthProperties.getFrontendRedirectUrlNormalized() + "/login");
     }
 
     @Override
@@ -148,7 +148,9 @@ public class OAuth2Config {
         String accessToken = jwtTokenService.createAccessToken(user);
         String refreshToken = jwtTokenService.createRefreshToken(user);
         String redirectUrl = UriComponentsBuilder
-          .fromUriString(oAuthProperties.getBaseUrlNormalized() + "/login")
+          .fromUriString(
+            oAuthProperties.getFrontendRedirectUrlNormalized() + "/login"
+          )
           .queryParam("accessToken", accessToken)
           .queryParam("refreshToken", refreshToken)
           .build()
