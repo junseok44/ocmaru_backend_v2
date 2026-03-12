@@ -1,27 +1,101 @@
 package com.junseok.ocmaru.global;
 
+import com.junseok.ocmaru.global.exception.ErrorResult;
 import com.junseok.ocmaru.global.exception.NotFoundException;
 import com.junseok.ocmaru.global.exception.UnauthorizedException;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  private static final Logger log = LoggerFactory.getLogger(
+    GlobalExceptionHandler.class
+  );
 
-  @ExceptionHandler
-  public ResponseEntity<String> handleRuntimeError(IllegalArgumentException e) {
-    return ResponseEntity.badRequest().body("Error" + e.getMessage());
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResult> handleIllegalArgument(
+    IllegalArgumentException e
+  ) {
+    log.warn("Illegal argument: {}", e.getMessage(), e);
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(new ErrorResult("BAD_REQUEST", e.getMessage()));
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResult> handleValidationError(
+    MethodArgumentNotValidException e
+  ) {
+    String message = e
+      .getBindingResult()
+      .getFieldErrors()
+      .stream()
+      .map(FieldError::getDefaultMessage)
+      .collect(Collectors.joining(", "));
+
+    if (message.isBlank()) {
+      message = "요청값 검증에 실패했습니다.";
+    }
+
+    log.warn("Validation error: {}", message, e);
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(new ErrorResult("VALIDATION_ERROR", message));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResult> handleNotReadable(
+    HttpMessageNotReadableException e
+  ) {
+    log.warn("Unreadable request body", e);
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(new ErrorResult("MALFORMED_JSON", "요청 본문 형식이 올바르지 않습니다."));
   }
 
   @ExceptionHandler(NotFoundException.class)
-  public ResponseEntity<String> handleNotFound(NotFoundException e) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+  public ResponseEntity<ErrorResult> handleNotFound(NotFoundException e) {
+    log.warn("Not found: {}", e.getMessage(), e);
+    return ResponseEntity
+      .status(HttpStatus.NOT_FOUND)
+      .body(new ErrorResult("NOT_FOUND", e.getMessage()));
   }
 
   @ExceptionHandler(UnauthorizedException.class)
-  public ResponseEntity<String> handleUnauthorized(UnauthorizedException e) {
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+  public ResponseEntity<ErrorResult> handleUnauthorized(UnauthorizedException e) {
+    log.warn("Unauthorized: {}", e.getMessage(), e);
+    return ResponseEntity
+      .status(HttpStatus.UNAUTHORIZED)
+      .body(new ErrorResult("UNAUTHORIZED", e.getMessage()));
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResult> handleAccessDenied(AccessDeniedException e) {
+    log.warn("Access denied: {}", e.getMessage(), e);
+    return ResponseEntity
+      .status(HttpStatus.FORBIDDEN)
+      .body(new ErrorResult("FORBIDDEN", "접근 권한이 없습니다."));
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResult> handleUnexpected(Exception e) {
+    log.error("Unhandled exception", e);
+    return ResponseEntity
+      .status(HttpStatus.INTERNAL_SERVER_ERROR)
+      .body(
+        new ErrorResult(
+          "INTERNAL_SERVER_ERROR",
+          "서버 내부 오류가 발생했습니다."
+        )
+      );
   }
 }
