@@ -24,7 +24,7 @@ public class AgendaVoteController {
 
   private final AgendaVoteService agendaVoteService;
 
-  @PostMapping("/")
+  @PostMapping("")
   public ResponseEntity<AgendaVoteStatResponseDto> createAgendaVote(
     @CurrentUser AuthPrincipal user,
     @RequestBody @Valid AgendaVoteCreateRequestDto dto

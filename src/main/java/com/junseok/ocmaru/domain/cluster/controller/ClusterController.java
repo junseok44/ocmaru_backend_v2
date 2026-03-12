@@ -32,7 +32,7 @@ public class ClusterController {
 
   private final ClusterService clusterService;
 
-  @GetMapping("/")
+  @GetMapping("")
   public ResponseEntity<List<ClusterResponseDto>> getAllClusters(
     @RequestParam(required = false, defaultValue = "0") Integer offset,
     @RequestParam(required = false, defaultValue = "10") Integer limit
@@ -50,7 +50,7 @@ public class ClusterController {
     return ResponseEntity.status(200).body(response);
   }
 
-  @PostMapping("/")
+  @PostMapping("")
   public ResponseEntity<ClusterResponseDto> createCluster(
     @RequestBody @Valid ClusterCreateRequestDto dto
   ) {

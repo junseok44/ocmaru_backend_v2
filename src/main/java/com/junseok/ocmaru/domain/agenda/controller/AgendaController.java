@@ -92,7 +92,7 @@ public class AgendaController {
     return ResponseEntity.status(201).body(response);
   }
 
-  @PostMapping("/")
+  @PostMapping("")
   public ResponseEntity<AgendaResponseDto> createAgenda(
     @CurrentUser AuthPrincipal user,
     @RequestBody @Valid AgendaCreateRequestDto dto
