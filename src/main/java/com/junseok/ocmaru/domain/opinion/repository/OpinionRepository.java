@@ -3,9 +3,9 @@ package com.junseok.ocmaru.domain.opinion.repository;
 import com.junseok.ocmaru.domain.opinion.entity.Opinion;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OpinionRepository
   extends JpaRepository<Opinion, Long>, OpinionRepositoryCustom {
@@ -19,4 +19,7 @@ public interface OpinionRepository
   List<Long> findIdsByUserId(@Param("userId") Long userId);
 
   void deleteByUserId(Long userId);
+
+  @Query("select o from Opinion o where o.opinionClusters IS EMPTY")
+  List<Opinion> findAllUnclusteredOpinions();
 }

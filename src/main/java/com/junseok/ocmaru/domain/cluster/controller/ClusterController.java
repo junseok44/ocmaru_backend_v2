@@ -106,9 +106,6 @@ public class ClusterController {
   }
 
   @PostMapping("/generate")
-  @PreAuthorize(
-    "hasRole(T(com.junseok.ocmaru.global.constant.RoleConstants).ADMIN)"
-  )
   public ResponseEntity<ClusterGenerateResponseDto> generateCluster(
     @CurrentUser AuthPrincipal user
   ) {

@@ -19,6 +19,8 @@ import com.junseok.ocmaru.domain.opinion.repository.OpinionClusterRepository;
 import com.junseok.ocmaru.domain.opinion.repository.OpinionRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.global.exception.NotFoundException;
+import com.junseok.ocmaru.infra.openai.OpenAiClusterMetadataClient;
+import com.junseok.ocmaru.infra.openai.OpenAiEmbeddingClient;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.LongStream;
@@ -41,6 +43,12 @@ class ClusterServiceTest {
 
   @Mock
   private OpinionClusterRepository opinionClusterRepository;
+
+  @Mock
+  private OpenAiEmbeddingClient openAiEmbeddingClient;
+
+  @Mock
+  private OpenAiClusterMetadataClient openAiClusterMetadataClient;
 
   @InjectMocks
   private ClusterService clusterService;
@@ -203,12 +211,53 @@ class ClusterServiceTest {
   }
 
   @Test
-  @DisplayName("generateCluster는 현재 placeholder 응답(0,0)을 반환한다")
-  void generateCluster_returnsPlaceholder() {
+  @DisplayName(
+    "generateCluster는 유사한 opinion들을 하나의 cluster로 묶고 연관관계를 설정한다"
+  )
+  void generateCluster_createsClustersAndLinksOpinions() {
+    // given
+    Opinion opinion1 = newOpinion(1L);
+    Opinion opinion2 = newOpinion(2L);
+    Opinion opinion3 = newOpinion(3L);
+
+    when(opinionRepository.findAllUnclusteredOpinions())
+      .thenReturn(List.of(opinion1, opinion2, opinion3));
+
+    when(openAiEmbeddingClient.getEmbedding("의견-1"))
+      .thenReturn(new Number[] { 1.0, 0.0 });
+    when(openAiEmbeddingClient.getEmbedding("의견-2"))
+      .thenReturn(new Number[] { 0.9, 0.1 });
+    when(openAiEmbeddingClient.getEmbedding("의견-3"))
+      .thenReturn(new Number[] { 0.0, 1.0 });
+
+    when(
+      openAiClusterMetadataClient.generateMetadata(
+        List.of("의견-1", "의견-2")
+      )
+    )
+      .thenReturn(new com.junseok.ocmaru.domain.cluster.dto.ClusterMetadataDto(
+        "제목",
+        "요약"
+      ));
+
+    when(clusterRepository.save(any(Cluster.class)))
+      .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // when
     ClusterGenerateResponseDto response = clusterService.generateCluster();
 
-    assertThat(response.clusterCreated()).isEqualTo(0);
-    assertThat(response.opinionsProcessed()).isEqualTo(0);
+    // then
+    assertThat(response.clusterCreated()).isEqualTo(1);
+    assertThat(response.opinionsProcessed()).isEqualTo(2);
+
+    List<Cluster> clusters1 = opinion1.getClusters();
+    List<Cluster> clusters2 = opinion2.getClusters();
+    List<Cluster> clusters3 = opinion3.getClusters();
+
+    assertThat(clusters1).hasSize(1);
+    assertThat(clusters2).hasSize(1);
+    assertThat(clusters1.get(0)).isSameAs(clusters2.get(0));
+    assertThat(clusters3).isEmpty();
   }
 
   private Opinion newOpinion(Long opinionId) {
