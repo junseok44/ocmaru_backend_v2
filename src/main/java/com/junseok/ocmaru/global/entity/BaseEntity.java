@@ -22,6 +22,7 @@ public class BaseEntity {
   private LocalDateTime createdAt;
 
   @Column(nullable = false)
+  @Getter
   private LocalDateTime updatedAt;
 
   @PrePersist

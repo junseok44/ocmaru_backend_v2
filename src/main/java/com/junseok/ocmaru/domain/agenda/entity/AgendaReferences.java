@@ -7,8 +7,10 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 @Embeddable
+@Getter
 public class AgendaReferences {
 
   @ElementCollection(fetch = FetchType.LAZY)
@@ -20,8 +22,6 @@ public class AgendaReferences {
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable
   @Column(name = "file")
-  // @AttributeOverride
-  // @OrderColumn
   private List<String> referenceFiles = new ArrayList<>();
 
   @ElementCollection

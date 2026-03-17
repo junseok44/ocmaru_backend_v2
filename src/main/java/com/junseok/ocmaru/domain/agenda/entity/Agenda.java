@@ -59,6 +59,26 @@ public class Agenda extends BaseEntity {
     if (referenceFiles != null) this.agendaReferences.setReferenceFiles(referenceFiles);
   }
 
+  public void setAgendaStatus(AgendaStatus agendaStatus) {
+    if (agendaStatus != null) {
+      this.agendaStatus = agendaStatus;
+    }
+  }
+
+  public void setThumbnail(String thumbnail) {
+    this.thumbnail = thumbnail;
+  }
+
+  public void increaseVoteCount(int delta) {
+    if (delta <= 0) return;
+    this.voteCount = (this.voteCount != null ? this.voteCount : 0) + delta;
+  }
+
+  public void increaseViewCount(int delta) {
+    if (delta <= 0) return;
+    this.viewCount = (this.viewCount != null ? this.viewCount : 0) + delta;
+  }
+
   public void appendReferenceFile(String fileUrl) {
     if (this.agendaReferences == null) this.agendaReferences = new AgendaReferences();
     this.agendaReferences.addReferenceFile(fileUrl);
