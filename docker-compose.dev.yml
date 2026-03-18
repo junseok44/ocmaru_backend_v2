@@ -50,6 +50,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ../server/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../server/observability/grafana/dashboards:/var/lib/grafana/dashboards/ocmaru:ro
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
