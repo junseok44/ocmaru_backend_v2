@@ -12,9 +12,11 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@NoArgsConstructor
 public class Agenda extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -53,10 +55,18 @@ public class Agenda extends BaseEntity {
     if (description != null) this.description = description;
   }
 
-  public void updateReferences(java.util.List<String> referenceLinks, java.util.List<String> referenceFiles) {
-    if (this.agendaReferences == null) this.agendaReferences = new AgendaReferences();
-    if (referenceLinks != null) this.agendaReferences.setReferenceLinks(referenceLinks);
-    if (referenceFiles != null) this.agendaReferences.setReferenceFiles(referenceFiles);
+  public void updateReferences(
+    java.util.List<String> referenceLinks,
+    java.util.List<String> referenceFiles
+  ) {
+    if (this.agendaReferences == null) this.agendaReferences =
+      new AgendaReferences();
+    if (referenceLinks != null) this.agendaReferences.setReferenceLinks(
+        referenceLinks
+      );
+    if (referenceFiles != null) this.agendaReferences.setReferenceFiles(
+        referenceFiles
+      );
   }
 
   public void setAgendaStatus(AgendaStatus agendaStatus) {
@@ -80,7 +90,8 @@ public class Agenda extends BaseEntity {
   }
 
   public void appendReferenceFile(String fileUrl) {
-    if (this.agendaReferences == null) this.agendaReferences = new AgendaReferences();
+    if (this.agendaReferences == null) this.agendaReferences =
+      new AgendaReferences();
     this.agendaReferences.addReferenceFile(fileUrl);
   }
 }

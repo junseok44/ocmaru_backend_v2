@@ -14,7 +14,7 @@ public record AgendaResponseDto(
   Long id,
   String title,
   String description,
-  String status,
+  AgendaStatus agendaStatus,
   int voteCount,
   int viewCount,
   List<String> referenceLinks,
@@ -29,25 +29,22 @@ public record AgendaResponseDto(
       return null;
     }
 
-    AgendaStatus agendaStatus = agenda.getAgendaStatus();
-    String status = agendaStatus != null
-      ? agendaStatus.name().toLowerCase()
-      : "created";
-
     AgendaReferences refs = agenda.getAgendaReferences();
+
     List<String> referenceLinks = refs != null
-      ? refs.getReferenceLinks()
+      ? List.copyOf(refs.getReferenceLinks()) // 값 복사
       : List.of();
     List<String> referenceFiles = refs != null
-      ? refs.getReferenceFiles()
+      ? List.copyOf(refs.getReferenceFiles())
       : List.of();
+
     String okinewsUrl = refs != null ? refs.getOkinewsUrl() : null;
 
     return new AgendaResponseDto(
       agenda.getId(),
       agenda.getTitle(),
       agenda.getDescription(),
-      status,
+      agenda.getAgendaStatus(),
       agenda.getVoteCount(),
       agenda.getViewCount(),
       referenceLinks,
