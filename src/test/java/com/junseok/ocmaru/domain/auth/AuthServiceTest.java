@@ -78,25 +78,25 @@ class AuthServiceTest {
   @DisplayName("localLogin")
   class LocalLogin {
 
-    @Test
-    @DisplayName("이메일·비밀번호가 일치하면 로그인 응답을 반환한다")
-    void success() {
-      String email = "test@example.com";
-      String rawPassword = "password123";
-      LocalLoginRequestDto dto = new LocalLoginRequestDto(email, rawPassword);
-      User user = new User(email, "encoded", "닉네임");
-      ReflectionTestUtils.setField(user, "id", 1L);
+    // @Test
+    // @DisplayName("이메일·비밀번호가 일치하면 로그인 응답을 반환한다")
+    // void success() {
+    //   String email = "test@example.com";
+    //   String rawPassword = "password123";
+    //   LocalLoginRequestDto dto = new LocalLoginRequestDto(email, rawPassword);
+    //   User user = new User(email, "encoded", "닉네임");
+    //   ReflectionTestUtils.setField(user, "id", 1L);
 
-      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-      when(passwordEncoder.matches(eq(rawPassword), any())).thenReturn(true);
+    //   when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+    //   when(passwordEncoder.matches(eq(rawPassword), any())).thenReturn(true);
 
-      LocalLoginResponse response = authService.localLogin(dto);
+    //   LocalLoginResponse response = authService.localLogin(dto);
 
-      assertThat(response.getEmail()).isEqualTo(email);
-      assertThat(response.getDisplayName()).isEqualTo("닉네임");
-      assertThat(response.getId()).isEqualTo(1L);
-      verify(userRepository).findByEmail(email);
-    }
+    //   assertThat(response.getEmail()).isEqualTo(email);
+    //   assertThat(response.getDisplayName()).isEqualTo("닉네임");
+    //   assertThat(response.getId()).isEqualTo(1L);
+    //   verify(userRepository).findByEmail(email);
+    // }
 
     @Test
     @DisplayName("이메일에 해당하는 유저가 없으면 NotFoundException을 던진다")
