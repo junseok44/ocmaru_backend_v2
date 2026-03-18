@@ -42,7 +42,8 @@ public class OpinionLikeService {
     if (prev.isPresent()) {
       throw new IllegalStateException("이미 좋아요한 의견입니다.");
     }
-
+    opinion.increaseLikes();
+    opinionRepository.save(opinion);
     opinionLikeRepository.save(new OpinionLike(opinion, user));
   }
 
@@ -52,13 +53,14 @@ public class OpinionLikeService {
       .findByOpinionIdAndUserId(opinionId, userId)
       .orElseThrow(() -> new NotFoundException("좋아요 기록이 없습니다."));
 
+    opinionLike.getOpinion().decreaseLikes();
     opinionLikeRepository.delete(opinionLike);
   }
 
   public boolean getIsLikedForOpinion(Long userId, Long opinionId) {
     Optional<OpinionLike> opinionLike = opinionLikeRepository.findByOpinionIdAndUserId(
-      userId,
-      opinionId
+      opinionId,
+      userId
     );
 
     return opinionLike.isPresent() ? true : false;
