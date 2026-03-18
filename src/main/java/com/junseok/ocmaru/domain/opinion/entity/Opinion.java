@@ -78,6 +78,14 @@ public class Opinion extends BaseEntity {
     );
   }
 
+  public void increaseLikes() {
+    this.likes = this.likes + 1;
+  }
+
+  public void decreaseLikes() {
+    this.likes = Math.max(0, this.likes - 1);
+  }
+
   /** PATCH용: DTO에 null이 아닌 필드만 반영 */
   public void applyUpdate(OpinionUpdateRequestDto dto) {
     if (dto.content() != null) {
