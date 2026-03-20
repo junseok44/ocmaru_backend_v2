@@ -2,6 +2,7 @@ package com.junseok.ocmaru.domain.agenda.controller;
 
 import com.junseok.ocmaru.domain.agenda.dto.AgendaCreateRequestDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaFileUploadResponseDto;
+import com.junseok.ocmaru.domain.agenda.dto.AgendaBookmarkStatusResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaUpdateRequestDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaVoteStatResponseDto;
@@ -18,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -80,6 +82,25 @@ public class AgendaController {
   public ResponseEntity<AgendaResponseDto> getAgenda(@PathVariable Long id) {
     AgendaResponseDto response = agendaService.getAgendaById(id);
     return ResponseEntity.status(200).body(response);
+  }
+
+  @GetMapping("/{id}/bookmark-status")
+  public ResponseEntity<AgendaBookmarkStatusResponseDto> getBookmarkStatus(
+    @PathVariable Long id,
+    Authentication authentication
+  ) {
+    Long userId = null;
+    if (
+      authentication != null &&
+      authentication.isAuthenticated() &&
+      authentication.getPrincipal() instanceof AuthPrincipal user
+    ) {
+      userId = user.getId();
+    }
+
+    return ResponseEntity.status(200).body(
+      agendaService.getBookmarkStatus(id, userId)
+    );
   }
 
   @GetMapping("/{id}/opinions")

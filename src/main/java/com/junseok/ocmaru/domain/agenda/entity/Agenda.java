@@ -57,7 +57,9 @@ public class Agenda extends BaseEntity {
 
   public void updateReferences(
     java.util.List<String> referenceLinks,
-    java.util.List<String> referenceFiles
+    java.util.List<String> referenceFiles,
+    String okinewsUrl,
+    java.util.List<String> regionalCases
   ) {
     if (this.agendaReferences == null) this.agendaReferences =
       new AgendaReferences();
@@ -67,6 +69,9 @@ public class Agenda extends BaseEntity {
     if (referenceFiles != null) this.agendaReferences.setReferenceFiles(
         referenceFiles
       );
+    if (okinewsUrl != null) this.agendaReferences.setOkinewsUrl(okinewsUrl);
+    if (regionalCases != null)
+      this.agendaReferences.setRegionalCases(regionalCases);
   }
 
   public void setAgendaStatus(AgendaStatus agendaStatus) {

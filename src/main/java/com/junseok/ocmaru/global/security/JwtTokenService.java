@@ -53,7 +53,8 @@ public class JwtTokenService {
     Long userId = parseUserId(jwt.getSubject());
     String email = jwt.getClaimAsString("email");
     String displayName = jwt.getClaimAsString("displayName");
-    return new AuthPrincipal(userId, email, displayName);
+    boolean admin = extractRoles(jwt).contains("ROLE_ADMIN");
+    return new AuthPrincipal(userId, email, displayName, admin);
   }
 
   public List<String> extractRoles(Jwt jwt) {

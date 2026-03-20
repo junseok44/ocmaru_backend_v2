@@ -46,9 +46,10 @@ public class AgendaVoteService {
   public AgendaVoteResponseDto getAgendaVote(Long userId, Long agendaId) {
     AgendaVotes vote = agendaVoteRepository
       .findByAgendaIdAndUserId(agendaId, userId)
-      .orElseThrow(() ->
-        new NotFoundException("해당 아젠다에 대한 투표가 없습니다.")
-      );
+      .orElse(null);
+    if (vote == null) {
+      return null;
+    }
     return new AgendaVoteResponseDto(vote.getVoteType());
   }
 

@@ -26,7 +26,7 @@ public class AgendaReferences {
 
   @ElementCollection
   @Column(name = "tag")
-  private List<String> tags = new ArrayList<>();
+  private List<String> regionalCases = new ArrayList<>();
 
   public void setReferenceLinks(List<String> referenceLinks) {
     this.referenceLinks = referenceLinks != null ? referenceLinks : new ArrayList<>();
@@ -34,6 +34,15 @@ public class AgendaReferences {
 
   public void setReferenceFiles(List<String> referenceFiles) {
     this.referenceFiles = referenceFiles != null ? referenceFiles : new ArrayList<>();
+  }
+
+  public void setOkinewsUrl(String okinewsUrl) {
+    this.okinewsUrl = okinewsUrl;
+  }
+
+  public void setRegionalCases(List<String> regionalCases) {
+    this.regionalCases =
+      regionalCases != null ? regionalCases : new ArrayList<>();
   }
 
   public void addReferenceFile(String fileUrl) {

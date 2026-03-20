@@ -1,6 +1,7 @@
 package com.junseok.ocmaru.domain.agenda.service;
 
 import com.junseok.ocmaru.domain.agenda.dto.AgendaCreateRequestDto;
+import com.junseok.ocmaru.domain.agenda.dto.AgendaBookmarkStatusResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaFileUploadResponseDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaFilesUpdateRequestDto;
 import com.junseok.ocmaru.domain.agenda.dto.AgendaResponseDto;
@@ -173,6 +174,13 @@ public class AgendaService {
       .findById(id)
       .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
     agenda.updateTitleAndDescription(dto.title(), dto.summary());
+    agenda.updateReferences(
+      dto.referenceLinks(),
+      dto.referenceFiles(),
+      dto.okinewsUrl(),
+      dto.regionalCases()
+    );
+    agenda.setAgendaStatus(dto.status());
     return AgendaResponseDto.from(agenda);
   }
 
@@ -186,7 +194,9 @@ public class AgendaService {
       .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
     agenda.updateReferences(
       dto.referenceLinks(),
-      dto.referenceFiles()
+      dto.referenceFiles(),
+      null,
+      null
     );
     return AgendaResponseDto.from(agenda);
   }
@@ -232,6 +242,21 @@ public class AgendaService {
   @Transactional
   public void unbookmarkAgenda(Long agendaId, Long userId) {
     agendaBookmarkRepository.deleteByAgendaIdAndUserId(agendaId, userId);
+  }
+
+  @Transactional(readOnly = true)
+  public AgendaBookmarkStatusResponseDto getBookmarkStatus(
+    Long agendaId,
+    Long userId
+  ) {
+    long bookmarkCount = agendaBookmarkRepository.countByAgendaId(agendaId);
+    boolean isBookmarked =
+      userId != null && agendaBookmarkRepository.existsByAgendaIdAndUserId(agendaId, userId);
+
+    return new AgendaBookmarkStatusResponseDto(
+      isBookmarked,
+      (int) bookmarkCount
+    );
   }
 
   @Transactional(readOnly = true)
