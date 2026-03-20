@@ -27,5 +27,8 @@ public interface AgendaBookmarkRepository
 
   long countByUserId(Long userId);
 
+  @Query("select count(ab) from AgendaBookmark ab where ab.agenda.id = :agendaId")
+  long countByAgendaId(@Param("agendaId") Long agendaId);
+
   void deleteByUserId(Long userId);
 }

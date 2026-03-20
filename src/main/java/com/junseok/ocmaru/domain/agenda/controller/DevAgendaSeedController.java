@@ -56,7 +56,9 @@ public class DevAgendaSeedController {
     a1.setAgendaStatus(AgendaStatus.EXECUTING);
     a1.updateReferences(
       List.of("https://ocmaru.example/parking-plan"),
-      List.of("/files/parking-plan.pdf")
+      List.of("/files/parking-plan.pdf"),
+      null,
+      null
     );
     a1.setThumbnail("/images/agendas/parking.jpg");
     a1.increaseVoteCount(132);
@@ -70,7 +72,9 @@ public class DevAgendaSeedController {
     a2.setAgendaStatus(AgendaStatus.EXECUTING);
     a2.updateReferences(
       List.of("https://ocmaru.example/playground-safety"),
-      List.of("/files/playground-safety.hwp")
+      List.of("/files/playground-safety.hwp"),
+      null,
+      null
     );
     a2.setThumbnail("/images/agendas/playground.jpg");
     a2.increaseVoteCount(87);
@@ -84,7 +88,9 @@ public class DevAgendaSeedController {
     a3.setAgendaStatus(AgendaStatus.EXECUTING);
     a3.updateReferences(
       List.of("https://ocmaru.example/street-light"),
-      List.of()
+      List.of(),
+      null,
+      null
     );
     a3.setThumbnail("/images/agendas/light.jpg");
     a3.increaseVoteCount(45);

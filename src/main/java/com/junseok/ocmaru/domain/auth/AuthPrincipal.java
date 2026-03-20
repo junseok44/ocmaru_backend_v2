@@ -17,12 +17,14 @@ public class AuthPrincipal {
   private Long id;
   private String email;
   private String displayName;
+  private boolean admin;
 
   public static AuthPrincipal from(LocalLoginResponse response) {
     return new AuthPrincipal(
       response.getId(),
       response.getEmail(),
-      response.getDisplayName()
+      response.getDisplayName(),
+      response.isAdmin()
     );
   }
 
@@ -30,7 +32,8 @@ public class AuthPrincipal {
     return new AuthPrincipal(
       user.getId(),
       user.getEmail(),
-      user.getDisplayName()
+      user.getDisplayName(),
+      user.isAdmin()
     );
   }
 }

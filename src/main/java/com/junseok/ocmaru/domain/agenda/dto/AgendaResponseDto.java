@@ -19,6 +19,7 @@ public record AgendaResponseDto(
   int viewCount,
   List<String> referenceLinks,
   List<String> referenceFiles,
+  List<String> regionalCases,
   String okinewsUrl,
   String imageUrl,
   LocalDateTime createdAt,
@@ -37,6 +38,9 @@ public record AgendaResponseDto(
     List<String> referenceFiles = refs != null
       ? List.copyOf(refs.getReferenceFiles())
       : List.of();
+    List<String> regionalCases = refs != null
+      ? List.copyOf(refs.getRegionalCases())
+      : List.of();
 
     String okinewsUrl = refs != null ? refs.getOkinewsUrl() : null;
 
@@ -49,6 +53,7 @@ public record AgendaResponseDto(
       agenda.getViewCount(),
       referenceLinks,
       referenceFiles,
+      regionalCases,
       okinewsUrl,
       agenda.getThumbnail(),
       agenda.getCreatedAt(),
