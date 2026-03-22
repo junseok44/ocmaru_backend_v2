@@ -5,6 +5,8 @@ services:
     command: sh -c "chmod +x ./gradlew && ./gradlew bootRun --args='--spring.profiles.active=local'"
     ports:
       - "8080:8080"
+    cpus: "1.0"
+    mem_limit: 1024m
     volumes:
       - ./:/workspace/server
       - gradle-cache:/root/.gradle
