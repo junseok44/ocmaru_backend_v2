@@ -33,10 +33,13 @@ public class AgendaVoteService {
       .findById(userId)
       .orElseThrow(() -> new NotFoundException("유저가 없습니다."));
     Agenda agenda = agendaRepository
-      .findById(dto.agendaId())
-      .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
+      .findByIdWithWriteLock(dto.agendaId())
+      .orElseThrow(() ->
+        new NotFoundException("해당 아젠다가 존재하지 않습니다.")
+      );
 
     agendaVoteRepository.deleteByAgendaIdAndUserId(dto.agendaId(), userId);
+
     agendaVoteRepository.save(new AgendaVotes(agenda, user, dto.voteType()));
 
     return toStatResponse(dto.agendaId());
