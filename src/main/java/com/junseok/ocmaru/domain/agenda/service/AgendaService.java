@@ -28,7 +28,7 @@ import com.junseok.ocmaru.domain.opinion.repository.OpinionRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import com.junseok.ocmaru.global.exception.NotFoundException;
-import com.junseok.ocmaru.global.storage.PublicObjectStorageService;
+import com.junseok.ocmaru.global.storage.PublicObjectStorage;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class AgendaService {
   private final OpinionRepository opinionRepository;
   private final OpinionClusterRepository opinionClusterRepository;
   private final UserRepository userRepository;
-  private final PublicObjectStorageService publicObjectStorageService;
+  private final PublicObjectStorage publicObjectStorage;
 
   @Transactional(readOnly = true)
   public List<AgendaResponseDto> getAllAgendas(Integer offset, Integer limit) {
@@ -207,7 +207,7 @@ public class AgendaService {
       .findById(id)
       .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
 
-    String publicUrl = publicObjectStorageService.uploadAgendaFile(id, file);
+    String publicUrl = publicObjectStorage.uploadAgendaFile(id, file);
     agenda.appendReferenceFile(publicUrl);
 
     return new AgendaFileUploadResponseDto(
