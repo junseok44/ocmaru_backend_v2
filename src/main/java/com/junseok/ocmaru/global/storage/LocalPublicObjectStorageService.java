@@ -5,37 +5,35 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-@Service
-public class PublicObjectStorageService {
+/** 로컬 {@code app.storage.public-dir} 아래에 파일을 저장합니다. */
+public class LocalPublicObjectStorageService implements PublicObjectStorage {
 
   private final Path publicRootDir;
 
-  public PublicObjectStorageService(
-    @Value("${app.storage.public-dir:public-objects}") String publicDir
-  ) {
+  public LocalPublicObjectStorageService(String publicDir) {
     this.publicRootDir = Paths.get(publicDir).toAbsolutePath().normalize();
   }
 
+  @Override
   public String uploadAgendaFile(Long agendaId, MultipartFile file) {
     if (file == null || file.isEmpty()) {
       throw new IllegalArgumentException("No file provided");
     }
 
-    String originalName = file.getOriginalFilename() == null
-      ? "file"
-      : Paths.get(file.getOriginalFilename()).getFileName().toString();
-    String filename =
+    String originalName =
+      file.getOriginalFilename() == null
+        ? "file"
+        : Paths.get(file.getOriginalFilename()).getFileName().toString();
+    String relativePath =
       "agendas/" +
       agendaId +
       "/" +
       System.currentTimeMillis() +
       "-" +
       originalName;
-    Path target = publicRootDir.resolve(filename).normalize();
+    Path target = publicRootDir.resolve(relativePath).normalize();
 
     try {
       Files.createDirectories(target.getParent());
@@ -46,6 +44,6 @@ public class PublicObjectStorageService {
       throw new IllegalStateException("Failed to upload file", e);
     }
 
-    return "/public-objects/" + filename;
+    return "/public-objects/" + relativePath;
   }
 }
