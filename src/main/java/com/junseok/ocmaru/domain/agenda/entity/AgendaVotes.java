@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
   uniqueConstraints = {
-    @UniqueConstraint(columnNames = { "AGENDA_ID", "USER_ID", "VOTE_TYPE" }),
+    @UniqueConstraint(columnNames = { "AGENDA_ID", "USER_ID" }),
   }
 )
 @Getter

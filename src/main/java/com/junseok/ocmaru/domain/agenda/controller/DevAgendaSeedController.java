@@ -3,8 +3,12 @@ package com.junseok.ocmaru.domain.agenda.controller;
 import com.junseok.ocmaru.domain.agenda.entity.Agenda;
 import com.junseok.ocmaru.domain.agenda.entity.AgendaTimelineItem;
 import com.junseok.ocmaru.domain.agenda.enums.AgendaStatus;
+import com.junseok.ocmaru.domain.agenda.repository.AgendaBookmarkRepository;
 import com.junseok.ocmaru.domain.agenda.repository.AgendaRepository;
 import com.junseok.ocmaru.domain.agenda.repository.AgendaTimelineItemRepository;
+import com.junseok.ocmaru.domain.agenda.repository.AgendaVoteRepository;
+import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
+import com.junseok.ocmaru.domain.opinion.repository.OpinionClusterRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import java.util.List;
@@ -22,6 +26,10 @@ public class DevAgendaSeedController {
 
   private final AgendaRepository agendaRepository;
   private final AgendaTimelineItemRepository agendaTimelineItemRepository;
+  private final AgendaVoteRepository agendaVoteRepository;
+  private final AgendaBookmarkRepository agendaBookmarkRepository;
+  private final ClusterRepository clusterRepository;
+  private final OpinionClusterRepository opinionClusterRepository;
   private final UserRepository userRepository;
 
   @PostMapping("/seed")
@@ -32,17 +40,24 @@ public class DevAgendaSeedController {
       .findAll()
       .stream()
       .findFirst()
-      .orElseGet(() -> userRepository.save(new User("dev@example.com", "password", "개발자")));
+      .orElseGet(() ->
+        userRepository.save(new User("dev@example.com", "password", "개발자"))
+      );
 
     // 2) 기존 Dev 데이터 제거 (중복 방지)
+    // FK 순서: 타임라인/투표/북마크 → opinion_cluster → cluster → agenda
     List<Agenda> existing = agendaRepository.findAllByWriterId(user.getId());
     if (!existing.isEmpty()) {
       for (Agenda agenda : existing) {
-        agendaTimelineItemRepository.deleteAll(
-          agendaTimelineItemRepository.findByAgendaIdOrderByCreatedAtAsc(
-              agenda.getId()
-            )
-        );
+        Long agendaId = agenda.getId();
+        // FK 순서 유지 + 같은 트랜잭션에서 부모 삭제보다 자식이 DB에 먼저 지워지도록 벌크 DELETE 사용
+        agendaTimelineItemRepository.deleteAllByAgendaId(agendaId);
+        agendaVoteRepository.deleteAllByAgendaId(agendaId);
+        agendaBookmarkRepository.deleteAllByAgendaId(agendaId);
+
+        // opinion_cluster → cluster 순 벌크 삭제 (엔티티 deleteAll은 flush 순서로 agenda 삭제보다 늦을 수 있음)
+        opinionClusterRepository.deleteAllByClusterAgendaId(agendaId);
+        clusterRepository.deleteAllByAgendaId(agendaId);
       }
       agendaRepository.deleteAll(existing);
     }
@@ -53,7 +68,7 @@ public class DevAgendaSeedController {
       "읍내 중심가 주차 공간을 확충하고, 야간에는 주민들에게 무료로 개방합니다.",
       user
     );
-    a1.setAgendaStatus(AgendaStatus.EXECUTING);
+    a1.setAgendaStatus(AgendaStatus.VOTING);
     a1.updateReferences(
       List.of("https://ocmaru.example/parking-plan"),
       List.of("/files/parking-plan.pdf"),
@@ -69,7 +84,7 @@ public class DevAgendaSeedController {
       "노후된 놀이터 시설을 교체하고 CCTV 및 안전 울타리를 설치합니다.",
       user
     );
-    a2.setAgendaStatus(AgendaStatus.EXECUTING);
+    a2.setAgendaStatus(AgendaStatus.VOTING);
     a2.updateReferences(
       List.of("https://ocmaru.example/playground-safety"),
       List.of("/files/playground-safety.hwp"),
@@ -85,7 +100,7 @@ public class DevAgendaSeedController {
       "어두운 골목과 보행로에 LED 보안등을 추가로 설치합니다.",
       user
     );
-    a3.setAgendaStatus(AgendaStatus.EXECUTING);
+    a3.setAgendaStatus(AgendaStatus.VOTING);
     a3.updateReferences(
       List.of("https://ocmaru.example/street-light"),
       List.of(),
@@ -136,4 +151,3 @@ public class DevAgendaSeedController {
     return ResponseEntity.ok("Dev agendas seeded.");
   }
 }
-
