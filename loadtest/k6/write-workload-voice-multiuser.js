@@ -23,12 +23,14 @@ export const options = {
   scenarios: {
     write_voice_multi: {
       executor: "ramping-vus",
+      startVUs: 0,
       stages: [
-        { duration: "10s", target: 500 },
-        { duration: "20s", target: 1000 },
-        { duration: "10s", target: 300 },
+        { duration: "2m", target: 500 }, // 2분 동안 천천히 500명까지 증가
+        { duration: "3m", target: 500 }, // 500명에서 3분간 유지 (스테이징)
+        { duration: "2m", target: 1000 }, // 다시 1000명까지 증가
+        { duration: "3m", target: 1000 }, // 1000명에서 유지
       ],
-      gracefulStop: "10s",
+      gracefulStop: "30s",
     },
   },
   thresholds: {
