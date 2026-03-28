@@ -38,9 +38,17 @@ public class AgendaVoteService {
         new NotFoundException("해당 아젠다가 존재하지 않습니다.")
       );
 
+    boolean hadVote = agendaVoteRepository
+      .findByAgendaIdAndUserId(dto.agendaId(), userId)
+      .isPresent();
+
     agendaVoteRepository.deleteByAgendaIdAndUserId(dto.agendaId(), userId);
 
     agendaVoteRepository.save(new AgendaVotes(agenda, user, dto.voteType()));
+
+    if (!hadVote) {
+      agenda.increaseVoteCount(1);
+    }
 
     return toStatResponse(dto.agendaId());
   }
@@ -58,7 +66,18 @@ public class AgendaVoteService {
 
   @Transactional
   public void deleteAgendaVote(Long userId, Long agendaId) {
+    if (
+      agendaVoteRepository.findByAgendaIdAndUserId(agendaId, userId).isEmpty()
+    ) {
+      return;
+    }
+    Agenda agenda = agendaRepository
+      .findByIdWithWriteLock(agendaId)
+      .orElseThrow(() ->
+        new NotFoundException("해당 아젠다가 존재하지 않습니다.")
+      );
     agendaVoteRepository.deleteByAgendaIdAndUserId(agendaId, userId);
+    agenda.decreaseVoteCount(1);
   }
 
   private AgendaVoteStatResponseDto toStatResponse(Long agendaId) {

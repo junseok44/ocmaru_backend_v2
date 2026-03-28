@@ -89,6 +89,13 @@ public class Agenda extends BaseEntity {
     this.voteCount = (this.voteCount != null ? this.voteCount : 0) + delta;
   }
 
+  /** 투표 행 삭제 시 유저 수 감소. 0 미만으로 내려가지 않음. */
+  public void decreaseVoteCount(int delta) {
+    if (delta <= 0) return;
+    int current = this.voteCount != null ? this.voteCount : 0;
+    this.voteCount = Math.max(0, current - delta);
+  }
+
   public void increaseViewCount(int delta) {
     if (delta <= 0) return;
     this.viewCount = (this.viewCount != null ? this.viewCount : 0) + delta;
