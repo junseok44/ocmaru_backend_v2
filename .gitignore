@@ -42,3 +42,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local runtime logs (p6spy sql-trace, etc.) ###
+logs/

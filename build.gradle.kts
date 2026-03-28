@@ -34,6 +34,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("com.github.gavlyukovskiy:p6spy-spring-boot-starter:2.0.0")
 	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 	implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
     annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta") 
