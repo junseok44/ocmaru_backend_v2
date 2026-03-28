@@ -44,12 +44,35 @@ public record AgendaResponseDto(
 
     String okinewsUrl = refs != null ? refs.getOkinewsUrl() : null;
 
+    return from(agenda, agenda.getVoteCount());
+  }
+
+  /** voteCount 만 Redis 등 외부 집계로 덮어쓸 때 사용 */
+  public static AgendaResponseDto from(Agenda agenda, int voteCount) {
+    if (agenda == null) {
+      return null;
+    }
+
+    AgendaReferences refs = agenda.getAgendaReferences();
+
+    List<String> referenceLinks = refs != null
+      ? List.copyOf(refs.getReferenceLinks())
+      : List.of();
+    List<String> referenceFiles = refs != null
+      ? List.copyOf(refs.getReferenceFiles())
+      : List.of();
+    List<String> regionalCases = refs != null
+      ? List.copyOf(refs.getRegionalCases())
+      : List.of();
+
+    String okinewsUrl = refs != null ? refs.getOkinewsUrl() : null;
+
     return new AgendaResponseDto(
       agenda.getId(),
       agenda.getTitle(),
       agenda.getDescription(),
       agenda.getAgendaStatus(),
-      agenda.getVoteCount(),
+      voteCount,
       agenda.getViewCount(),
       referenceLinks,
       referenceFiles,
