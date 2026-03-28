@@ -11,6 +11,7 @@ import com.junseok.ocmaru.domain.agenda.repository.AgendaVoteRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import com.junseok.ocmaru.global.exception.NotFoundException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class AgendaVoteService {
   private final AgendaVoteRepository agendaVoteRepository;
   private final AgendaRepository agendaRepository;
   private final UserRepository userRepository;
+  private final AgendaVoteStatsRedisService agendaVoteStatsRedisService;
 
   /** 투표 생성 또는 변경 (기존 투표가 있으면 제거 후 새로 저장) */
   @Transactional
@@ -38,19 +40,23 @@ public class AgendaVoteService {
         new NotFoundException("해당 아젠다가 존재하지 않습니다.")
       );
 
-    boolean hadVote = agendaVoteRepository
-      .findByAgendaIdAndUserId(dto.agendaId(), userId)
-      .isPresent();
+    Optional<AgendaVotes> existing = agendaVoteRepository.findByAgendaIdAndUserId(
+      dto.agendaId(),
+      userId
+    );
 
     agendaVoteRepository.deleteByAgendaIdAndUserId(dto.agendaId(), userId);
 
     agendaVoteRepository.save(new AgendaVotes(agenda, user, dto.voteType()));
 
-    if (!hadVote) {
-      agenda.increaseVoteCount(1);
-    }
+    agendaVoteRepository.flush();
+    agendaVoteStatsRedisService.afterVoteSaved(
+      dto.agendaId(),
+      existing.map(AgendaVotes::getVoteType),
+      dto.voteType()
+    );
 
-    return toStatResponse(dto.agendaId());
+    return agendaVoteStatsRedisService.getStats(dto.agendaId());
   }
 
   @Transactional(readOnly = true)
@@ -66,38 +72,16 @@ public class AgendaVoteService {
 
   @Transactional
   public void deleteAgendaVote(Long userId, Long agendaId) {
-    if (
-      agendaVoteRepository.findByAgendaIdAndUserId(agendaId, userId).isEmpty()
-    ) {
+    Optional<AgendaVotes> existing = agendaVoteRepository.findByAgendaIdAndUserId(
+      agendaId,
+      userId
+    );
+    if (existing.isEmpty()) {
       return;
     }
-    Agenda agenda = agendaRepository
-      .findByIdWithWriteLock(agendaId)
-      .orElseThrow(() ->
-        new NotFoundException("해당 아젠다가 존재하지 않습니다.")
-      );
+    AgendaVoteType removedType = existing.get().getVoteType();
     agendaVoteRepository.deleteByAgendaIdAndUserId(agendaId, userId);
-    agenda.decreaseVoteCount(1);
-  }
-
-  private AgendaVoteStatResponseDto toStatResponse(Long agendaId) {
-    long agree = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.AGREEMENT
-    );
-    long disagree = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.DISAGREEMENT
-    );
-    long neutral = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.NEUTRAL
-    );
-    return new AgendaVoteStatResponseDto(
-      (int) (agree + disagree + neutral),
-      (int) agree,
-      (int) disagree,
-      (int) neutral
-    );
+    agendaVoteRepository.flush();
+    agendaVoteStatsRedisService.afterVoteRemoved(agendaId, removedType);
   }
 }
