@@ -34,8 +34,10 @@ public class AgendaVoteService {
     User user = userRepository
       .findById(userId)
       .orElseThrow(() -> new NotFoundException("유저가 없습니다."));
+    // 집계는 Redis가 담당하고, 투표 행은 (AGENDA_ID, USER_ID) 유니크로 충돌을 막는다.
+    // 서로 다른 유저는 병렬로 투표 가능하도록 안건 행 비관적 락은 쓰지 않는다.
     Agenda agenda = agendaRepository
-      .findByIdWithWriteLock(dto.agendaId())
+      .findById(dto.agendaId())
       .orElseThrow(() ->
         new NotFoundException("해당 아젠다가 존재하지 않습니다.")
       );
