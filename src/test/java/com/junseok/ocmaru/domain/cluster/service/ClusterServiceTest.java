@@ -24,6 +24,7 @@ import com.junseok.ocmaru.infra.openai.EmbeddingClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.Optional;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,8 @@ class ClusterServiceTest {
 
   private ClusterService clusterService;
   private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
+  /** 단위 테스트에서 병렬 스레드 없이 동기 실행 */
+  private final Executor clusterEmbeddingExecutor = (Runnable r) -> r.run();
 
   @BeforeEach
   void setUp() {
@@ -64,7 +67,8 @@ class ClusterServiceTest {
         opinionClusterRepository,
         embeddingClient,
         clusterMetadataClient,
-        meterRegistry
+        meterRegistry,
+        clusterEmbeddingExecutor
       );
   }
 

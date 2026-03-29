@@ -2,10 +2,11 @@ services:
   server:
     image: eclipse-temurin:17-jdk-jammy
     working_dir: /workspace/server
-    command: sh -c "chmod +x ./gradlew && ./gradlew bootRun --args='--spring.profiles.active=local'"
+    # local: application-local.properties | mock-openai: MockEmbeddingClient·MockClusterMetadataClient 사용
+    command: sh -c "chmod +x ./gradlew && ./gradlew bootRun --args='--spring.profiles.active=local,mock-openai'"
     ports:
       - "8080:8080"
-    cpus: "2"
+    cpus: "1.5"
     mem_limit: 1024m
     volumes:
       - ./:/workspace/server
@@ -13,6 +14,13 @@ services:
     environment:
       - BASE_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:5173
+      - SPRING_PROFILES_ACTIVE=local,mock-openai
+      # 부하/실험 전용 DB를 Postgres에 새로 만들었다면 URL만 바꿔서 사용 (기본은 application-local의 ocmaru)
+      # - DB_URL=jdbc:postgresql://host.docker.internal:5432/ocmaru_loadtest
+      # 의견 시드(OpinionDataSeeder): 기동 시 한 번만 넣으려면 예시처럼 활성화
+      # - APP_SEED_ENABLED=true
+      # - APP_SEED_USER_COUNT=10
+      # - APP_SEED_OPINIONS_PER_USER=700
 
   client:
     image: node:20-bookworm-slim

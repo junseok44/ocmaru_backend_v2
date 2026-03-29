@@ -44,7 +44,7 @@ class ClusterServiceGenerateClusterIntegrationTest {
       new User("loadtest@example.com", "prov", AuthProvider.LOCAL, "loadtester")
     );
 
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 7000; i++) {
       opinionRepository.save(new Opinion(user, "integration-opinion-" + i));
     }
 

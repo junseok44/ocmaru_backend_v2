@@ -22,7 +22,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +42,9 @@ public class ClusterService {
   private final EmbeddingClient embeddingClient;
   private final ClusterMetadataClient clusterMetadataClient;
   private final MeterRegistry meterRegistry;
+
+  @Qualifier("clusterEmbeddingExecutor")
+  private final Executor clusterEmbeddingExecutor;
 
   @Transactional(readOnly = true)
   public List<ClusterResponseDto> getAllClusters(
@@ -194,9 +200,35 @@ public class ClusterService {
       .description("generateCluster: 임베딩 조회 구간")
       .register(meterRegistry)
       .record(() -> {
-        for (Opinion opinion : unclusteredOpinions) {
-          Number[] embedding = getEmbedding(opinion);
-          opinionsWithEmbeddings.add(new OpinionWithEmbedding(opinion, embedding));
+        int n = unclusteredOpinions.size();
+        if (n == 0) {
+          return;
+        }
+        List<String> texts = unclusteredOpinions
+          .stream()
+          .map(Opinion::getContent)
+          .toList();
+        List<CompletableFuture<Number[]>> futures = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+          final String text = texts.get(i);
+          futures.add(
+            CompletableFuture.supplyAsync(
+              () -> embeddingClient.getEmbedding(text),
+              clusterEmbeddingExecutor
+            )
+          );
+        }
+        CompletableFuture
+          .allOf(futures.toArray(CompletableFuture[]::new))
+          .join();
+
+        for (int i = 0; i < n; i++) {
+          opinionsWithEmbeddings.add(
+            new OpinionWithEmbedding(
+              unclusteredOpinions.get(i),
+              futures.get(i).join()
+            )
+          );
         }
       });
 
@@ -265,7 +297,10 @@ public class ClusterService {
         }
       });
 
-    return new ClusterGenerateResponseDto(clustered.size(), opinionsProcessed[0]);
+    return new ClusterGenerateResponseDto(
+      clustered.size(),
+      opinionsProcessed[0]
+    );
   }
 
   public Number[] getEmbedding(Opinion opinion) {

@@ -36,8 +36,13 @@ public class MockEmbeddingClient implements EmbeddingClient {
     return out;
   }
 
-  private static void sleepNetworkDelay(long minInclusiveMs, long maxExclusiveMs) {
-    long ms = ThreadLocalRandom.current().nextLong(minInclusiveMs, maxExclusiveMs);
+  private static void sleepNetworkDelay(
+    long minInclusiveMs,
+    long maxExclusiveMs
+  ) {
+    long ms = ThreadLocalRandom
+      .current()
+      .nextLong(minInclusiveMs, maxExclusiveMs);
     try {
       Thread.sleep(ms);
     } catch (InterruptedException e) {
