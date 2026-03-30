@@ -3,10 +3,11 @@ package com.junseok.ocmaru.domain.cluster.controller;
 import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterAddOpinionRequestDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterCreateRequestDto;
-import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateResponseDto;
+import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateJobAcceptedDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterRemoveOpinionRequestDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
+import com.junseok.ocmaru.domain.cluster.job.ClusterGenerateJobService;
 import com.junseok.ocmaru.domain.cluster.service.ClusterService;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ClusterController {
 
   private final ClusterService clusterService;
+  private final ClusterGenerateJobService clusterGenerateJobService;
 
   @GetMapping("")
   public ResponseEntity<List<ClusterResponseDto>> getAllClusters(
@@ -106,10 +108,11 @@ public class ClusterController {
   }
 
   @PostMapping("/generate")
-  public ResponseEntity<ClusterGenerateResponseDto> generateCluster(
+  public ResponseEntity<ClusterGenerateJobAcceptedDto> generateCluster(
     @CurrentUser AuthPrincipal user
   ) {
-    ClusterGenerateResponseDto response = clusterService.generateCluster();
-    return ResponseEntity.status(200).body(response);
+    ClusterGenerateJobAcceptedDto response =
+      clusterGenerateJobService.enqueueGenerateJob();
+    return ResponseEntity.status(202).body(response);
   }
 }

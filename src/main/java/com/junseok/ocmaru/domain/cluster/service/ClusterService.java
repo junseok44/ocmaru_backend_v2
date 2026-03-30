@@ -22,9 +22,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ClusterService {
+
+  private static final Logger log = LoggerFactory.getLogger(ClusterService.class);
 
   private final ClusterRepository clusterRepository;
   private final OpinionRepository opinionRepository;
@@ -182,6 +187,14 @@ public class ClusterService {
 
   @Transactional
   public ClusterGenerateResponseDto generateCluster() {
+    return generateCluster(null);
+  }
+
+  @Transactional
+  public ClusterGenerateResponseDto generateCluster(UUID jobId) {
+    if (jobId != null) {
+      log.info("cluster generate start jobId={}", jobId);
+    }
     // 일단 unclustered된 opinion들을 모두 조회한다.
     // 해당 opinion들의 임베딩을 openAI 임베딩 api를 활용해서 조회한다.
     // 임베딩 결과를 기반으로 클러스터링을 진행한다. 구체적으로는 첫번재 opinion부터 순회하면서,
