@@ -12,7 +12,6 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class ClusterGenerateJobService {
-
-  private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 256;
 
   private static final EnumSet<ClusterGenerateJobStatus> ACTIVE_STATUSES =
     EnumSet.of(ClusterGenerateJobStatus.QUEUED, ClusterGenerateJobStatus.RUNNING);
@@ -33,10 +30,7 @@ public class ClusterGenerateJobService {
   private final ClusterGenerateJobStatusService clusterGenerateJobStatusService;
 
   @Transactional
-  public ClusterGenerateJobAcceptedDto enqueueGenerateJob(
-    Long userId,
-    Optional<String> idempotencyKeyHeader
-  ) {
+  public ClusterGenerateJobAcceptedDto enqueueGenerateJob(Long userId) {
     clusterGenerateGlobalLockRepository
       .findSingletonForUpdate()
       .orElseThrow(() ->
@@ -44,8 +38,6 @@ public class ClusterGenerateJobService {
           "cluster_generate_global_lock 행이 없습니다. 애플리케이션 기동을 확인하세요."
         )
       );
-
-    Optional<String> idempotencyKey = normalizeIdempotencyKey(idempotencyKeyHeader);
 
     Optional<ClusterGenerateJob> activeGlobal =
       clusterGenerateJobRepository.findFirstByStatusInOrderByCreatedAtAsc(
@@ -62,36 +54,13 @@ public class ClusterGenerateJobService {
       );
     }
 
-    if (idempotencyKey.isPresent()) {
-      Optional<ClusterGenerateJob> existing =
-        clusterGenerateJobRepository.findByUserIdAndIdempotencyKey(
-          userId,
-          idempotencyKey.get()
-        );
-      if (existing.isPresent()) {
-        return new ClusterGenerateJobAcceptedDto(existing.get().getId());
-      }
-    }
-
     UUID jobId = UUID.randomUUID();
     ClusterGenerateJob row = new ClusterGenerateJob(
       jobId,
       userId,
-      idempotencyKey.orElse(null),
       ClusterGenerateJobStatus.QUEUED
     );
-
-    try {
-      clusterGenerateJobRepository.save(row);
-    } catch (DataIntegrityViolationException e) {
-      if (idempotencyKey.isPresent()) {
-        return clusterGenerateJobRepository
-          .findByUserIdAndIdempotencyKey(userId, idempotencyKey.get())
-          .map(j -> new ClusterGenerateJobAcceptedDto(j.getId()))
-          .orElseThrow(() -> e);
-      }
-      throw e;
-    }
+    clusterGenerateJobRepository.save(row);
 
     try {
       clusterJobDispatcher.dispatch(jobId);
@@ -120,24 +89,5 @@ public class ClusterGenerateJobService {
       job.getOpinionsProcessed(),
       job.getFailureMessage()
     );
-  }
-
-  private static Optional<String> normalizeIdempotencyKey(
-    Optional<String> raw
-  ) {
-    if (raw.isEmpty()) {
-      return Optional.empty();
-    }
-    String s = raw.get().trim();
-    if (s.isEmpty()) {
-      return Optional.empty();
-    }
-    if (s.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
-      throw new ResponseStatusException(
-        HttpStatus.BAD_REQUEST,
-        "Idempotency-Key는 256자 이하여야 합니다."
-      );
-    }
-    return Optional.of(s);
   }
 }

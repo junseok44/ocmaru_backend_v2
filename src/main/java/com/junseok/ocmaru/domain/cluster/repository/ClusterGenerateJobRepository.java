@@ -14,10 +14,5 @@ public interface ClusterGenerateJobRepository
     Collection<ClusterGenerateJobStatus> statuses
   );
 
-  Optional<ClusterGenerateJob> findByUserIdAndIdempotencyKey(
-    Long userId,
-    String idempotencyKey
-  );
-
   Optional<ClusterGenerateJob> findByIdAndUserId(UUID id, Long userId);
 }

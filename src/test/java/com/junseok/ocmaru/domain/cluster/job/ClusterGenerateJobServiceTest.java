@@ -60,7 +60,7 @@ class ClusterGenerateJobServiceTest {
     );
 
     ClusterGenerateJobAcceptedDto dto =
-      clusterGenerateJobService.enqueueGenerateJob(1L, Optional.empty());
+      clusterGenerateJobService.enqueueGenerateJob(1L);
 
     assertThat(dto.jobId()).isNotNull();
     verify(clusterGenerateJobRepository).save(rowCaptor.capture());
@@ -69,34 +69,6 @@ class ClusterGenerateJobServiceTest {
       ClusterGenerateJobStatus.QUEUED
     );
     verify(clusterJobDispatcher).dispatch(dto.jobId());
-  }
-
-  @Test
-  @DisplayName("동일 Idempotency-Key로 기존 잡이 있으면 저장/디스패치를 생략한다")
-  void enqueueGenerateJob_idempotentReturnsExisting() {
-    UUID existingId = UUID.fromString(
-      "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-    );
-    ClusterGenerateJob existing = new ClusterGenerateJob(
-      existingId,
-      1L,
-      "my-key",
-      ClusterGenerateJobStatus.SUCCEEDED
-    );
-    when(
-      clusterGenerateJobRepository.findByUserIdAndIdempotencyKey(1L, "my-key")
-    )
-      .thenReturn(Optional.of(existing));
-
-    ClusterGenerateJobAcceptedDto dto =
-      clusterGenerateJobService.enqueueGenerateJob(
-        1L,
-        Optional.of("my-key")
-      );
-
-    assertThat(dto.jobId()).isEqualTo(existingId);
-    verify(clusterGenerateJobRepository, never()).save(any());
-    verify(clusterJobDispatcher, never()).dispatch(any(UUID.class));
   }
 
   @Test
@@ -110,9 +82,7 @@ class ClusterGenerateJobServiceTest {
       .when(clusterJobDispatcher)
       .dispatch(any(UUID.class));
 
-    assertThatThrownBy(() ->
-      clusterGenerateJobService.enqueueGenerateJob(1L, Optional.empty())
-    )
+    assertThatThrownBy(() -> clusterGenerateJobService.enqueueGenerateJob(1L))
       .isInstanceOf(ResponseStatusException.class)
       .satisfies(ex -> {
         ResponseStatusException r = (ResponseStatusException) ex;
@@ -131,14 +101,13 @@ class ClusterGenerateJobServiceTest {
     ClusterGenerateJob active = new ClusterGenerateJob(
       activeId,
       1L,
-      null,
       ClusterGenerateJobStatus.RUNNING
     );
     when(clusterGenerateJobRepository.findFirstByStatusInOrderByCreatedAtAsc(any()))
       .thenReturn(Optional.of(active));
 
     ClusterGenerateJobAcceptedDto dto =
-      clusterGenerateJobService.enqueueGenerateJob(1L, Optional.empty());
+      clusterGenerateJobService.enqueueGenerateJob(1L);
 
     assertThat(dto.jobId()).isEqualTo(activeId);
     verify(clusterGenerateJobRepository, never()).save(any());
@@ -154,15 +123,12 @@ class ClusterGenerateJobServiceTest {
     ClusterGenerateJob active = new ClusterGenerateJob(
       activeId,
       2L,
-      null,
       ClusterGenerateJobStatus.RUNNING
     );
     when(clusterGenerateJobRepository.findFirstByStatusInOrderByCreatedAtAsc(any()))
       .thenReturn(Optional.of(active));
 
-    assertThatThrownBy(() ->
-      clusterGenerateJobService.enqueueGenerateJob(1L, Optional.empty())
-    )
+    assertThatThrownBy(() -> clusterGenerateJobService.enqueueGenerateJob(1L))
       .isInstanceOf(ClusterGenerateBusyException.class)
       .satisfies(ex -> {
         ClusterGenerateBusyException c = (ClusterGenerateBusyException) ex;

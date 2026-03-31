@@ -14,7 +14,6 @@ import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -113,14 +111,10 @@ public class ClusterController {
 
   @PostMapping("/generate")
   public ResponseEntity<ClusterGenerateJobAcceptedDto> generateCluster(
-    @CurrentUser AuthPrincipal user,
-    @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
+    @CurrentUser AuthPrincipal user
   ) {
     ClusterGenerateJobAcceptedDto response =
-      clusterGenerateJobService.enqueueGenerateJob(
-        user.getId(),
-        Optional.ofNullable(idempotencyKey)
-      );
+      clusterGenerateJobService.enqueueGenerateJob(user.getId());
     return ResponseEntity.status(202).body(response);
   }
 

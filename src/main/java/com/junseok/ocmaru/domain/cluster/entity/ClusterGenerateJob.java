@@ -10,7 +10,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -20,12 +19,6 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
   name = "cluster_generate_jobs",
-  uniqueConstraints = {
-    @UniqueConstraint(
-      name = "uk_cluster_generate_job_user_idempotency",
-      columnNames = { "user_id", "idempotency_key" }
-    ),
-  },
   indexes = { @Index(name = "idx_cluster_generate_job_user", columnList = "user_id") }
 )
 @Getter
@@ -38,9 +31,6 @@ public class ClusterGenerateJob {
 
   @Column(name = "user_id", nullable = false)
   private Long userId;
-
-  @Column(name = "idempotency_key", length = 256)
-  private String idempotencyKey;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 32)
@@ -61,15 +51,9 @@ public class ClusterGenerateJob {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  public ClusterGenerateJob(
-    UUID id,
-    Long userId,
-    String idempotencyKey,
-    ClusterGenerateJobStatus status
-  ) {
+  public ClusterGenerateJob(UUID id, Long userId, ClusterGenerateJobStatus status) {
     this.id = id;
     this.userId = userId;
-    this.idempotencyKey = idempotencyKey;
     this.status = status;
   }
 
