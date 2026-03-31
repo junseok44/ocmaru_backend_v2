@@ -1,5 +1,7 @@
 package com.junseok.ocmaru.global;
 
+import com.junseok.ocmaru.global.exception.ClusterGenerateBusyException;
+import com.junseok.ocmaru.global.exception.ClusterGenerateBusyResult;
 import com.junseok.ocmaru.global.exception.ErrorResult;
 import com.junseok.ocmaru.global.exception.NotFoundException;
 import com.junseok.ocmaru.global.exception.UnauthorizedException;
@@ -62,6 +64,22 @@ public class GlobalExceptionHandler {
     return ResponseEntity
       .status(HttpStatus.BAD_REQUEST)
       .body(new ErrorResult("MALFORMED_JSON", "요청 본문 형식이 올바르지 않습니다."));
+  }
+
+  @ExceptionHandler(ClusterGenerateBusyException.class)
+  public ResponseEntity<ClusterGenerateBusyResult> handleClusterGenerateBusy(
+    ClusterGenerateBusyException e
+  ) {
+    log.warn("Cluster generate busy: {}", e.getMessage());
+    return ResponseEntity
+      .status(HttpStatus.CONFLICT)
+      .body(
+        new ClusterGenerateBusyResult(
+          "CLUSTER_GENERATE_BUSY",
+          e.getMessage(),
+          e.getActiveJobId()
+        )
+      );
   }
 
   @ExceptionHandler(NotFoundException.class)

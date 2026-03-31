@@ -4,6 +4,7 @@ import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterAddOpinionRequestDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterCreateRequestDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateJobAcceptedDto;
+import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateJobStatusDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterRemoveOpinionRequestDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
@@ -13,6 +14,8 @@ import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -109,10 +113,24 @@ public class ClusterController {
 
   @PostMapping("/generate")
   public ResponseEntity<ClusterGenerateJobAcceptedDto> generateCluster(
-    @CurrentUser AuthPrincipal user
+    @CurrentUser AuthPrincipal user,
+    @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
   ) {
     ClusterGenerateJobAcceptedDto response =
-      clusterGenerateJobService.enqueueGenerateJob();
+      clusterGenerateJobService.enqueueGenerateJob(
+        user.getId(),
+        Optional.ofNullable(idempotencyKey)
+      );
     return ResponseEntity.status(202).body(response);
+  }
+
+  @GetMapping("/generate/jobs/{jobId}")
+  public ResponseEntity<ClusterGenerateJobStatusDto> getGenerateJobStatus(
+    @CurrentUser AuthPrincipal user,
+    @PathVariable UUID jobId
+  ) {
+    ClusterGenerateJobStatusDto response =
+      clusterGenerateJobService.getJobStatus(user.getId(), jobId);
+    return ResponseEntity.ok(response);
   }
 }

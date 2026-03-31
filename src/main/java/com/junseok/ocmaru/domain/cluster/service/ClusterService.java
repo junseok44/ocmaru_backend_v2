@@ -7,6 +7,7 @@ import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.entity.Cluster;
 import com.junseok.ocmaru.domain.cluster.metrics.ClusterGenerateMetrics;
+import com.junseok.ocmaru.domain.cluster.job.ClusterGenerateJobStatusService;
 import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionWithEmbedding;
@@ -28,7 +29,9 @@ import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,8 +51,14 @@ public class ClusterService {
   private final ClusterMetadataClient clusterMetadataClient;
   private final MeterRegistry meterRegistry;
 
+  private final ClusterGenerateJobStatusService clusterGenerateJobStatusService;
+
   @Qualifier("clusterEmbeddingExecutor")
   private final Executor clusterEmbeddingExecutor;
+
+  @Lazy
+  @Autowired
+  private ClusterService self;
 
   @Transactional(readOnly = true)
   public List<ClusterResponseDto> getAllClusters(
@@ -185,16 +194,35 @@ public class ClusterService {
     return opinions.stream().map(OpinionResponseDto::from).toList();
   }
 
-  @Transactional
   public ClusterGenerateResponseDto generateCluster() {
     return generateCluster(null);
   }
 
-  @Transactional
   public ClusterGenerateResponseDto generateCluster(UUID jobId) {
     if (jobId != null) {
       log.info("cluster generate start jobId={}", jobId);
+      clusterGenerateJobStatusService.markRunning(jobId);
     }
+    try {
+      ClusterGenerateResponseDto result = self.generateClusterTransactional();
+      if (jobId != null) {
+        clusterGenerateJobStatusService.markSucceeded(
+          jobId,
+          result.clusterCreated(),
+          result.opinionsProcessed()
+        );
+      }
+      return result;
+    } catch (Exception e) {
+      if (jobId != null) {
+        clusterGenerateJobStatusService.markFailed(jobId, e.getMessage());
+      }
+      throw e;
+    }
+  }
+
+  @Transactional
+  public ClusterGenerateResponseDto generateClusterTransactional() {
     // 일단 unclustered된 opinion들을 모두 조회한다.
     // 해당 opinion들의 임베딩을 openAI 임베딩 api를 활용해서 조회한다.
     // 임베딩 결과를 기반으로 클러스터링을 진행한다. 구체적으로는 첫번재 opinion부터 순회하면서,

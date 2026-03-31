@@ -12,6 +12,7 @@ import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.entity.Cluster;
+import com.junseok.ocmaru.domain.cluster.job.ClusterGenerateJobStatusService;
 import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.domain.opinion.entity.Opinion;
@@ -53,6 +54,9 @@ class ClusterServiceTest {
   @Mock
   private ClusterMetadataClient clusterMetadataClient;
 
+  @Mock
+  private ClusterGenerateJobStatusService clusterGenerateJobStatusService;
+
   private ClusterService clusterService;
   private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
   /** 단위 테스트에서 병렬 스레드 없이 동기 실행 */
@@ -68,8 +72,10 @@ class ClusterServiceTest {
         embeddingClient,
         clusterMetadataClient,
         meterRegistry,
+        clusterGenerateJobStatusService,
         clusterEmbeddingExecutor
       );
+    ReflectionTestUtils.setField(clusterService, "self", clusterService);
   }
 
   @Test
