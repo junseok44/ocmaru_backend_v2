@@ -24,6 +24,7 @@ public class AgendaVoteService {
   private final AgendaRepository agendaRepository;
   private final UserRepository userRepository;
   private final AgendaVoteStatsRedisService agendaVoteStatsRedisService;
+  private final RedisVoteLockService redisVoteLockService;
 
   /** 투표 생성 또는 변경 (기존 투표가 있으면 제거 후 새로 저장) */
   @Transactional
@@ -31,6 +32,7 @@ public class AgendaVoteService {
     Long userId,
     AgendaVoteCreateRequestDto dto
   ) {
+    redisVoteLockService.acquireAndRegisterRelease(dto.agendaId(), userId);
     User user = userRepository
       .findById(userId)
       .orElseThrow(() -> new NotFoundException("유저가 없습니다."));
@@ -54,7 +56,7 @@ public class AgendaVoteService {
     agendaVoteRepository.flush();
     agendaVoteStatsRedisService.afterVoteSaved(
       dto.agendaId(),
-      existing.map(AgendaVotes::getVoteType),
+      existing.map(v -> v.getVoteType()),
       dto.voteType()
     );
 
@@ -74,6 +76,7 @@ public class AgendaVoteService {
 
   @Transactional
   public void deleteAgendaVote(Long userId, Long agendaId) {
+    redisVoteLockService.acquireAndRegisterRelease(agendaId, userId);
     Optional<AgendaVotes> existing = agendaVoteRepository.findByAgendaIdAndUserId(
       agendaId,
       userId

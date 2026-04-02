@@ -1,5 +1,6 @@
 package com.junseok.ocmaru.global;
 
+import com.junseok.ocmaru.global.exception.ConflictException;
 import com.junseok.ocmaru.global.exception.ErrorResult;
 import com.junseok.ocmaru.global.exception.NotFoundException;
 import com.junseok.ocmaru.global.exception.UnauthorizedException;
@@ -62,6 +63,14 @@ public class GlobalExceptionHandler {
     return ResponseEntity
       .status(HttpStatus.BAD_REQUEST)
       .body(new ErrorResult("MALFORMED_JSON", "요청 본문 형식이 올바르지 않습니다."));
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ErrorResult> handleConflict(ConflictException e) {
+    log.warn("Conflict: {}", e.getMessage(), e);
+    return ResponseEntity
+      .status(HttpStatus.CONFLICT)
+      .body(new ErrorResult("CONFLICT", e.getMessage()));
   }
 
   @ExceptionHandler(NotFoundException.class)
