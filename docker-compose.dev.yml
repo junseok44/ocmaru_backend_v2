@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
   server:
     image: eclipse-temurin:17-jdk-jammy
     working_dir: /workspace/server
@@ -13,6 +21,10 @@ services:
     environment:
       - BASE_URL=http://localhost:8080
       - FRONTEND_URL=http://localhost:5173
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
 
   client:
     image: node:20-bookworm-slim
@@ -60,5 +72,6 @@ services:
 volumes:
   gradle-cache:
   client-node-modules:
+  redis-data:
   prometheus-data:
   grafana-data:

@@ -45,6 +45,7 @@ public class AgendaService {
   private final AgendaRepository agendaRepository;
   private final AgendaBookmarkRepository agendaBookmarkRepository;
   private final AgendaVoteRepository agendaVoteRepository;
+  private final AgendaVoteStatsRedisService agendaVoteStatsRedisService;
   private final AgendaTimelineItemRepository agendaTimelineItemRepository;
   private final ClusterRepository clusterRepository;
   private final OpinionRepository opinionRepository;
@@ -60,7 +61,7 @@ public class AgendaService {
     return agendaRepository
       .findAllByOrderByCreatedAtDesc(pageable)
       .stream()
-      .map(AgendaResponseDto::from)
+      .map(this::toAgendaResponse)
       .toList();
   }
 
@@ -77,7 +78,7 @@ public class AgendaService {
       userId,
       pageable
     );
-    return agendas.stream().map(AgendaResponseDto::from).toList();
+    return agendas.stream().map(this::toAgendaResponse).toList();
   }
 
   @Transactional(readOnly = true)
@@ -93,7 +94,7 @@ public class AgendaService {
       userId,
       pageable
     );
-    return agendas.stream().map(AgendaResponseDto::from).toList();
+    return agendas.stream().map(this::toAgendaResponse).toList();
   }
 
   @Transactional(readOnly = true)
@@ -101,7 +102,7 @@ public class AgendaService {
     Agenda agenda = agendaRepository
       .findById(id)
       .orElseThrow(() -> new NotFoundException("해당 아젠다가 존재하지 않습니다."));
-    return AgendaResponseDto.from(agenda);
+    return toAgendaResponse(agenda);
   }
 
   @Transactional(readOnly = true)
@@ -165,7 +166,7 @@ public class AgendaService {
       writer
     );
     agenda = agendaRepository.save(agenda);
-    return AgendaResponseDto.from(agenda);
+    return toAgendaResponse(agenda);
   }
 
   @Transactional
@@ -181,7 +182,7 @@ public class AgendaService {
       dto.regionalCases()
     );
     agenda.setAgendaStatus(dto.status());
-    return AgendaResponseDto.from(agenda);
+    return toAgendaResponse(agenda);
   }
 
   @Transactional
@@ -198,7 +199,7 @@ public class AgendaService {
       null,
       null
     );
-    return AgendaResponseDto.from(agenda);
+    return toAgendaResponse(agenda);
   }
 
   @Transactional
@@ -213,7 +214,7 @@ public class AgendaService {
     return new AgendaFileUploadResponseDto(
       true,
       publicUrl,
-      AgendaResponseDto.from(agenda)
+      toAgendaResponse(agenda)
     );
   }
 
@@ -332,5 +333,13 @@ public class AgendaService {
       dto.content(),
       dto.imageUrl()
     );
+  }
+
+  private AgendaResponseDto toAgendaResponse(Agenda agenda) {
+    int voteCount = agendaVoteStatsRedisService.getDisplayVoteCount(
+      agenda.getId(),
+      agenda.getVoteCount()
+    );
+    return AgendaResponseDto.from(agenda, voteCount);
   }
 }

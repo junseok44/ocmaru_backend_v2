@@ -30,10 +30,19 @@ public record AgendaResponseDto(
       return null;
     }
 
+    return from(agenda, agenda.getVoteCount());
+  }
+
+  /** voteCount 만 Redis 등 외부 집계로 덮어쓸 때 사용 */
+  public static AgendaResponseDto from(Agenda agenda, int voteCount) {
+    if (agenda == null) {
+      return null;
+    }
+
     AgendaReferences refs = agenda.getAgendaReferences();
 
     List<String> referenceLinks = refs != null
-      ? List.copyOf(refs.getReferenceLinks()) // 값 복사
+      ? List.copyOf(refs.getReferenceLinks())
       : List.of();
     List<String> referenceFiles = refs != null
       ? List.copyOf(refs.getReferenceFiles())
@@ -49,7 +58,7 @@ public record AgendaResponseDto(
       agenda.getTitle(),
       agenda.getDescription(),
       agenda.getAgendaStatus(),
-      agenda.getVoteCount(),
+      voteCount,
       agenda.getViewCount(),
       referenceLinks,
       referenceFiles,

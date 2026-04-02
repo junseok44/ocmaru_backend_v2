@@ -11,6 +11,7 @@ import com.junseok.ocmaru.domain.agenda.repository.AgendaVoteRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import com.junseok.ocmaru.global.exception.NotFoundException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,8 @@ public class AgendaVoteService {
   private final AgendaVoteRepository agendaVoteRepository;
   private final AgendaRepository agendaRepository;
   private final UserRepository userRepository;
+  private final AgendaVoteStatsRedisService agendaVoteStatsRedisService;
+  private final RedisVoteLockService redisVoteLockService;
 
   /** 투표 생성 또는 변경 (기존 투표가 있으면 제거 후 새로 저장) */
   @Transactional
@@ -29,28 +32,35 @@ public class AgendaVoteService {
     Long userId,
     AgendaVoteCreateRequestDto dto
   ) {
+    redisVoteLockService.acquireAndRegisterRelease(dto.agendaId(), userId);
     User user = userRepository
       .findById(userId)
       .orElseThrow(() -> new NotFoundException("유저가 없습니다."));
+    // 집계는 Redis가 담당하고, 투표 행은 (AGENDA_ID, USER_ID) 유니크로 충돌을 막는다.
+    // 서로 다른 유저는 병렬로 투표 가능하도록 안건 행 비관적 락은 쓰지 않는다.
     Agenda agenda = agendaRepository
-      .findByIdWithWriteLock(dto.agendaId())
+      .findById(dto.agendaId())
       .orElseThrow(() ->
         new NotFoundException("해당 아젠다가 존재하지 않습니다.")
       );
 
-    boolean hadVote = agendaVoteRepository
-      .findByAgendaIdAndUserId(dto.agendaId(), userId)
-      .isPresent();
+    Optional<AgendaVotes> existing = agendaVoteRepository.findByAgendaIdAndUserId(
+      dto.agendaId(),
+      userId
+    );
 
     agendaVoteRepository.deleteByAgendaIdAndUserId(dto.agendaId(), userId);
 
     agendaVoteRepository.save(new AgendaVotes(agenda, user, dto.voteType()));
 
-    if (!hadVote) {
-      agenda.increaseVoteCount(1);
-    }
+    agendaVoteRepository.flush();
+    agendaVoteStatsRedisService.afterVoteSaved(
+      dto.agendaId(),
+      existing.map(v -> v.getVoteType()),
+      dto.voteType()
+    );
 
-    return toStatResponse(dto.agendaId());
+    return agendaVoteStatsRedisService.getStats(dto.agendaId());
   }
 
   @Transactional(readOnly = true)
@@ -66,38 +76,17 @@ public class AgendaVoteService {
 
   @Transactional
   public void deleteAgendaVote(Long userId, Long agendaId) {
-    if (
-      agendaVoteRepository.findByAgendaIdAndUserId(agendaId, userId).isEmpty()
-    ) {
+    redisVoteLockService.acquireAndRegisterRelease(agendaId, userId);
+    Optional<AgendaVotes> existing = agendaVoteRepository.findByAgendaIdAndUserId(
+      agendaId,
+      userId
+    );
+    if (existing.isEmpty()) {
       return;
     }
-    Agenda agenda = agendaRepository
-      .findByIdWithWriteLock(agendaId)
-      .orElseThrow(() ->
-        new NotFoundException("해당 아젠다가 존재하지 않습니다.")
-      );
+    AgendaVoteType removedType = existing.get().getVoteType();
     agendaVoteRepository.deleteByAgendaIdAndUserId(agendaId, userId);
-    agenda.decreaseVoteCount(1);
-  }
-
-  private AgendaVoteStatResponseDto toStatResponse(Long agendaId) {
-    long agree = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.AGREEMENT
-    );
-    long disagree = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.DISAGREEMENT
-    );
-    long neutral = agendaVoteRepository.countByAgendaIdAndVoteType(
-      agendaId,
-      AgendaVoteType.NEUTRAL
-    );
-    return new AgendaVoteStatResponseDto(
-      (int) (agree + disagree + neutral),
-      (int) agree,
-      (int) disagree,
-      (int) neutral
-    );
+    agendaVoteRepository.flush();
+    agendaVoteStatsRedisService.afterVoteRemoved(agendaId, removedType);
   }
 }

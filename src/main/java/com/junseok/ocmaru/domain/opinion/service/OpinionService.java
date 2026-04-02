@@ -1,5 +1,7 @@
 package com.junseok.ocmaru.domain.opinion.service;
 
+import com.junseok.ocmaru.domain.agenda.entity.Agenda;
+import com.junseok.ocmaru.domain.agenda.service.AgendaVoteStatsRedisService;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterWithAgendaDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionCreateRequestDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
@@ -31,6 +33,7 @@ public class OpinionService {
   private final OpinionCommentRepository opinionCommentRepository;
   private final OpinionLikeRepository opinionLikeRepository;
   private final UserRepository userRepository;
+  private final AgendaVoteStatsRedisService agendaVoteStatsRedisService;
 
   @Transactional(readOnly = true)
   public List<OpinionResponseDto> searchOpinions(
@@ -101,7 +104,14 @@ public class OpinionService {
     List<ClusterWithAgendaDto> clusterDtos = opinion
       .getClusters()
       .stream()
-      .map(c -> ClusterWithAgendaDto.from(c, c.getAgenda()))
+      .map(c -> {
+        Agenda a = c.getAgenda();
+        int voteCount = agendaVoteStatsRedisService.getDisplayVoteCount(
+          a.getId(),
+          a.getVoteCount()
+        );
+        return ClusterWithAgendaDto.from(c, a, voteCount);
+      })
       .toList();
 
     return OpinionWithClustersAndAgendaDto.from(

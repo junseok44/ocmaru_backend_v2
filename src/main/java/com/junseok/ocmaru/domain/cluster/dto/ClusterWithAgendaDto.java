@@ -18,9 +18,20 @@ public record ClusterWithAgendaDto(
     if (cluster == null) {
       return null;
     }
+    return from(cluster, agenda, agenda.getVoteCount());
+  }
+
+  public static ClusterWithAgendaDto from(
+    Cluster cluster,
+    Agenda agenda,
+    int voteCount
+  ) {
+    if (cluster == null) {
+      return null;
+    }
     return new ClusterWithAgendaDto(
       ClusterResponseDto.from(cluster),
-      AgendaResponseDto.from(agenda)
+      AgendaResponseDto.from(agenda, voteCount)
     );
   }
 }
