@@ -30,20 +30,6 @@ public record AgendaResponseDto(
       return null;
     }
 
-    AgendaReferences refs = agenda.getAgendaReferences();
-
-    List<String> referenceLinks = refs != null
-      ? List.copyOf(refs.getReferenceLinks()) // 값 복사
-      : List.of();
-    List<String> referenceFiles = refs != null
-      ? List.copyOf(refs.getReferenceFiles())
-      : List.of();
-    List<String> regionalCases = refs != null
-      ? List.copyOf(refs.getRegionalCases())
-      : List.of();
-
-    String okinewsUrl = refs != null ? refs.getOkinewsUrl() : null;
-
     return from(agenda, agenda.getVoteCount());
   }
 
