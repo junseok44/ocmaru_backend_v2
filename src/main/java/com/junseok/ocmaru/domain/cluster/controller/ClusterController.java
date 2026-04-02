@@ -10,6 +10,7 @@ import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.service.ClusterService;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/clusters")
+@Tag(name = "클러스터", description = "의견 클러스터 생성·수정·삭제·의견 연결")
 @RequiredArgsConstructor
 public class ClusterController {
 

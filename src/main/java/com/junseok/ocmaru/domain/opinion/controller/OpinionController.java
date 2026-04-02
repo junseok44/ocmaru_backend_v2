@@ -18,6 +18,7 @@ import com.junseok.ocmaru.domain.opinion.service.OpinionLikeService;
 import com.junseok.ocmaru.domain.opinion.service.OpinionService;
 import com.junseok.ocmaru.domain.opinion.service.OpinionTranscribeService;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,10 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/opinions")
+@Tag(
+  name = "의견",
+  description = "의견 검색·CRUD, 댓글, 좋아요, 음성 전사(Whisper)"
+)
 public class OpinionController {
 
   private final OpinionService opinionService;

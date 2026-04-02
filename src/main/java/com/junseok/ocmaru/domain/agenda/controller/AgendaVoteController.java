@@ -6,6 +6,7 @@ import com.junseok.ocmaru.domain.agenda.dto.AgendaVoteStatResponseDto;
 import com.junseok.ocmaru.domain.agenda.service.AgendaVoteService;
 import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/agendas/votes")
+@Tag(name = "안건 투표", description = "안건 찬반 투표 생성·조회·삭제")
 @RequiredArgsConstructor
 public class AgendaVoteController {
 

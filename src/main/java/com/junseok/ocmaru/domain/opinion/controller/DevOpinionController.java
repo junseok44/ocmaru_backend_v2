@@ -7,6 +7,7 @@ import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import com.junseok.ocmaru.global.exception.NotFoundException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/dev")
+@Tag(
+  name = "개발 전용",
+  description = "로컬/스테이징 시드 데이터 (운영 노출 시 주의)"
+)
 public class DevOpinionController {
 
   private final OpinionRepository opinionRepository;

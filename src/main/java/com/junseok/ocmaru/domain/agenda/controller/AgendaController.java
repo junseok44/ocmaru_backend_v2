@@ -14,6 +14,7 @@ import com.junseok.ocmaru.domain.auth.AuthPrincipal;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionCreateRequestDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/agendas")
+@Tag(
+  name = "안건",
+  description = "안건 CRUD, 북마크, 실행 타임라인, 파일 업로드, 안건 내 의견"
+)
 @RequiredArgsConstructor
 public class AgendaController {
 
