@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class Agenda extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "WRITER_ID")
+  @JoinColumn(name = "WRITER_ID", nullable = false)
   private User writer;
 
   @Column(nullable = false)
