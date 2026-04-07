@@ -1,0 +1,12 @@
+.env
+.env.prod
+.env.local
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+application-local.yml
+application-local.properties
+/Todo.md
