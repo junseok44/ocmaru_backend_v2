@@ -12,6 +12,7 @@ import com.junseok.ocmaru.domain.cluster.dto.ClusterGenerateResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.entity.Cluster;
+import com.junseok.ocmaru.domain.cluster.job.ClusterGenerateJobStatusService;
 import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.domain.opinion.entity.Opinion;
@@ -19,15 +20,18 @@ import com.junseok.ocmaru.domain.opinion.repository.OpinionClusterRepository;
 import com.junseok.ocmaru.domain.opinion.repository.OpinionRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.global.exception.NotFoundException;
-import com.junseok.ocmaru.infra.openai.OpenAiClusterMetadataClient;
-import com.junseok.ocmaru.infra.openai.OpenAiEmbeddingClient;
+import com.junseok.ocmaru.infra.openai.ClusterMetadataClient;
+import com.junseok.ocmaru.infra.openai.EmbeddingClient;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.Optional;
 import java.util.stream.LongStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -45,13 +49,34 @@ class ClusterServiceTest {
   private OpinionClusterRepository opinionClusterRepository;
 
   @Mock
-  private OpenAiEmbeddingClient openAiEmbeddingClient;
+  private EmbeddingClient embeddingClient;
 
   @Mock
-  private OpenAiClusterMetadataClient openAiClusterMetadataClient;
+  private ClusterMetadataClient clusterMetadataClient;
 
-  @InjectMocks
+  @Mock
+  private ClusterGenerateJobStatusService clusterGenerateJobStatusService;
+
   private ClusterService clusterService;
+  private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
+  /** 단위 테스트에서 병렬 스레드 없이 동기 실행 */
+  private final Executor clusterEmbeddingExecutor = (Runnable r) -> r.run();
+
+  @BeforeEach
+  void setUp() {
+    clusterService =
+      new ClusterService(
+        clusterRepository,
+        opinionRepository,
+        opinionClusterRepository,
+        embeddingClient,
+        clusterMetadataClient,
+        meterRegistry,
+        clusterGenerateJobStatusService,
+        clusterEmbeddingExecutor
+      );
+    ReflectionTestUtils.setField(clusterService, "self", clusterService);
+  }
 
   @Test
   @DisplayName("대량 opinion으로 createCluster 호출 시 하나의 cluster로 묶인다")
@@ -223,15 +248,15 @@ class ClusterServiceTest {
     when(opinionRepository.findAllUnclusteredOpinions())
       .thenReturn(List.of(opinion1, opinion2, opinion3));
 
-    when(openAiEmbeddingClient.getEmbedding("의견-1"))
+    when(embeddingClient.getEmbedding("의견-1"))
       .thenReturn(new Number[] { 1.0, 0.0 });
-    when(openAiEmbeddingClient.getEmbedding("의견-2"))
+    when(embeddingClient.getEmbedding("의견-2"))
       .thenReturn(new Number[] { 0.9, 0.1 });
-    when(openAiEmbeddingClient.getEmbedding("의견-3"))
+    when(embeddingClient.getEmbedding("의견-3"))
       .thenReturn(new Number[] { 0.0, 1.0 });
 
     when(
-      openAiClusterMetadataClient.generateMetadata(
+      clusterMetadataClient.generateMetadata(
         List.of("의견-1", "의견-2")
       )
     )

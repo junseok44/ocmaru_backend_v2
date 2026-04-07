@@ -6,6 +6,8 @@ import com.junseok.ocmaru.domain.cluster.dto.ClusterMetadataDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterResponseDto;
 import com.junseok.ocmaru.domain.cluster.dto.ClusterUpdateRequestDto;
 import com.junseok.ocmaru.domain.cluster.entity.Cluster;
+import com.junseok.ocmaru.domain.cluster.metrics.ClusterGenerateMetrics;
+import com.junseok.ocmaru.domain.cluster.job.ClusterGenerateJobStatusService;
 import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionResponseDto;
 import com.junseok.ocmaru.domain.opinion.dto.OpinionWithEmbedding;
@@ -13,13 +15,23 @@ import com.junseok.ocmaru.domain.opinion.entity.Opinion;
 import com.junseok.ocmaru.domain.opinion.repository.OpinionClusterRepository;
 import com.junseok.ocmaru.domain.opinion.repository.OpinionRepository;
 import com.junseok.ocmaru.global.exception.NotFoundException;
-import com.junseok.ocmaru.infra.openai.OpenAiClusterMetadataClient;
-import com.junseok.ocmaru.infra.openai.OpenAiEmbeddingClient;
+import com.junseok.ocmaru.infra.openai.ClusterMetadataClient;
+import com.junseok.ocmaru.infra.openai.EmbeddingClient;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,11 +42,23 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ClusterService {
 
+  private static final Logger log = LoggerFactory.getLogger(ClusterService.class);
+
   private final ClusterRepository clusterRepository;
   private final OpinionRepository opinionRepository;
   private final OpinionClusterRepository opinionClusterRepository;
-  private final OpenAiEmbeddingClient openAiEmbeddingClient;
-  private final OpenAiClusterMetadataClient openAiClusterMetadataClient;
+  private final EmbeddingClient embeddingClient;
+  private final ClusterMetadataClient clusterMetadataClient;
+  private final MeterRegistry meterRegistry;
+
+  private final ClusterGenerateJobStatusService clusterGenerateJobStatusService;
+
+  @Qualifier("clusterEmbeddingExecutor")
+  private final Executor clusterEmbeddingExecutor;
+
+  @Lazy
+  @Autowired
+  private ClusterService self;
 
   @Transactional(readOnly = true)
   public List<ClusterResponseDto> getAllClusters(
@@ -170,8 +194,35 @@ public class ClusterService {
     return opinions.stream().map(OpinionResponseDto::from).toList();
   }
 
-  @Transactional
   public ClusterGenerateResponseDto generateCluster() {
+    return generateCluster(null);
+  }
+
+  public ClusterGenerateResponseDto generateCluster(UUID jobId) {
+    if (jobId != null) {
+      log.info("cluster generate start jobId={}", jobId);
+      clusterGenerateJobStatusService.markRunning(jobId);
+    }
+    try {
+      ClusterGenerateResponseDto result = self.generateClusterTransactional();
+      if (jobId != null) {
+        clusterGenerateJobStatusService.markSucceeded(
+          jobId,
+          result.clusterCreated(),
+          result.opinionsProcessed()
+        );
+      }
+      return result;
+    } catch (Exception e) {
+      if (jobId != null) {
+        clusterGenerateJobStatusService.markFailed(jobId, e.getMessage());
+      }
+      throw e;
+    }
+  }
+
+  @Transactional
+  public ClusterGenerateResponseDto generateClusterTransactional() {
     // 일단 unclustered된 opinion들을 모두 조회한다.
     // 해당 opinion들의 임베딩을 openAI 임베딩 api를 활용해서 조회한다.
     // 임베딩 결과를 기반으로 클러스터링을 진행한다. 구체적으로는 첫번재 opinion부터 순회하면서,
@@ -182,73 +233,119 @@ public class ClusterService {
     List<Opinion> unclusteredOpinions = opinionRepository
       .findAllUnclusteredOpinions()
       .stream()
-      .limit(10)
       .toList();
 
     List<OpinionWithEmbedding> opinionsWithEmbeddings = new ArrayList<>();
-    for (Opinion opinion : unclusteredOpinions) {
-      Number[] embedding = getEmbedding(opinion);
-      opinionsWithEmbeddings.add(new OpinionWithEmbedding(opinion, embedding));
-    }
+    Timer
+      .builder(ClusterGenerateMetrics.EMBEDDING)
+      .description("generateCluster: 임베딩 조회 구간")
+      .register(meterRegistry)
+      .record(() -> {
+        int n = unclusteredOpinions.size();
+        if (n == 0) {
+          return;
+        }
+        List<String> texts = unclusteredOpinions
+          .stream()
+          .map(Opinion::getContent)
+          .toList();
+        List<CompletableFuture<Number[]>> futures = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+          final String text = texts.get(i);
+          futures.add(
+            CompletableFuture.supplyAsync(
+              () -> embeddingClient.getEmbedding(text),
+              clusterEmbeddingExecutor
+            )
+          );
+        }
+        CompletableFuture
+          .allOf(futures.toArray(CompletableFuture[]::new))
+          .join();
+
+        for (int i = 0; i < n; i++) {
+          opinionsWithEmbeddings.add(
+            new OpinionWithEmbedding(
+              unclusteredOpinions.get(i),
+              futures.get(i).join()
+            )
+          );
+        }
+      });
 
     List<List<OpinionWithEmbedding>> clustered = new ArrayList<>();
     Set<OpinionWithEmbedding> processed = new HashSet<>();
 
-    int opinionsProcessed = 0;
+    final int[] opinionsProcessed = { 0 };
 
-    for (int i = 0; i < opinionsWithEmbeddings.size(); i++) {
-      if (processed.contains(opinionsWithEmbeddings.get(i))) {
-        continue;
-      }
-      List<OpinionWithEmbedding> cluster = new ArrayList<>();
-      cluster.add(opinionsWithEmbeddings.get(i));
-      processed.add(opinionsWithEmbeddings.get(i));
+    Timer
+      .builder(ClusterGenerateMetrics.CLUSTERING)
+      .description("generateCluster: 유사도 기반 군집화 구간")
+      .register(meterRegistry)
+      .record(() -> {
+        for (int i = 0; i < opinionsWithEmbeddings.size(); i++) {
+          if (processed.contains(opinionsWithEmbeddings.get(i))) {
+            continue;
+          }
+          List<OpinionWithEmbedding> cluster = new ArrayList<>();
+          cluster.add(opinionsWithEmbeddings.get(i));
+          processed.add(opinionsWithEmbeddings.get(i));
 
-      for (int j = i + 1; j < opinionsWithEmbeddings.size(); j++) {
-        if (processed.contains(opinionsWithEmbeddings.get(j))) {
-          continue;
+          for (int j = i + 1; j < opinionsWithEmbeddings.size(); j++) {
+            if (processed.contains(opinionsWithEmbeddings.get(j))) {
+              continue;
+            }
+            double similarity = cosineSimilarity(
+              opinionsWithEmbeddings.get(i).getEmbedding(),
+              opinionsWithEmbeddings.get(j).getEmbedding()
+            );
+
+            if (similarity > 0.5) {
+              cluster.add(opinionsWithEmbeddings.get(j));
+              processed.add(opinionsWithEmbeddings.get(j));
+            }
+          }
+
+          if (cluster.size() >= 2) {
+            clustered.add(cluster);
+            opinionsProcessed[0] += cluster.size();
+          }
         }
-        double similarity = cosineSimilarity(
-          opinionsWithEmbeddings.get(i).getEmbedding(),
-          opinionsWithEmbeddings.get(j).getEmbedding()
-        );
+      });
 
-        if (similarity > 0.5) {
-          cluster.add(opinionsWithEmbeddings.get(j));
-          processed.add(opinionsWithEmbeddings.get(j));
+    Timer
+      .builder(ClusterGenerateMetrics.METADATA)
+      .description("generateCluster: 메타데이터 생성/저장 구간")
+      .register(meterRegistry)
+      .record(() -> {
+        for (List<OpinionWithEmbedding> cluster : clustered) {
+          ClusterMetadataDto clusterMetadata = generateClusterMetadata(cluster);
+
+          double averageSimilarity = calculateAverageSimilarity(cluster);
+
+          Cluster newCluster = new Cluster(
+            clusterMetadata.title(),
+            clusterMetadata.summary(),
+            (int) (averageSimilarity * 100),
+            cluster.size()
+          );
+
+          clusterRepository.save(newCluster);
+
+          for (OpinionWithEmbedding opinionWithEmbedding : cluster) {
+            opinionWithEmbedding.getOpinion().addCluster(newCluster);
+          }
         }
-      }
+      });
 
-      if (cluster.size() >= 2) {
-        clustered.add(cluster);
-        opinionsProcessed += cluster.size();
-      }
-    }
-
-    for (List<OpinionWithEmbedding> cluster : clustered) {
-      ClusterMetadataDto clusterMetadata = generateClusterMetadata(cluster);
-
-      double averageSimilarity = calculateAverageSimilarity(cluster);
-
-      Cluster newCluster = new Cluster(
-        clusterMetadata.title(),
-        clusterMetadata.summary(),
-        (int) (averageSimilarity * 100),
-        cluster.size()
-      );
-
-      clusterRepository.save(newCluster);
-
-      for (OpinionWithEmbedding opinionWithEmbedding : cluster) {
-        opinionWithEmbedding.getOpinion().addCluster(newCluster);
-      }
-    }
-
-    return new ClusterGenerateResponseDto(clustered.size(), opinionsProcessed);
+    return new ClusterGenerateResponseDto(
+      clustered.size(),
+      opinionsProcessed[0]
+    );
   }
 
   public Number[] getEmbedding(Opinion opinion) {
-    return openAiEmbeddingClient.getEmbedding(opinion.getContent());
+    return embeddingClient.getEmbedding(opinion.getContent());
   }
 
   private static double cosineSimilarity(
@@ -276,7 +373,7 @@ public class ClusterService {
       )
       .toList();
 
-    return openAiClusterMetadataClient.generateMetadata(contents);
+    return clusterMetadataClient.generateMetadata(contents);
   }
 
   private static double calculateAverageSimilarity(

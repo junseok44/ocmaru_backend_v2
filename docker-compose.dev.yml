@@ -10,10 +10,11 @@ services:
   server:
     image: eclipse-temurin:17-jdk-jammy
     working_dir: /workspace/server
-    command: sh -c "chmod +x ./gradlew && ./gradlew bootRun --args='--spring.profiles.active=local'"
+    # local: application-local.properties | mock-openai: MockEmbeddingClient·MockClusterMetadataClient 사용
+    command: sh -c "chmod +x ./gradlew && ./gradlew bootRun"
     ports:
       - "8080:8080"
-    cpus: "2"
+    cpus: "1.5"
     mem_limit: 1024m
     volumes:
       - ./:/workspace/server
@@ -23,6 +24,7 @@ services:
       - FRONTEND_URL=http://localhost:5173
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=local,mock-openai
     depends_on:
       - redis
 

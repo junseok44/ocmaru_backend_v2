@@ -1,5 +1,7 @@
 package com.junseok.ocmaru.global;
 
+import com.junseok.ocmaru.global.exception.ClusterGenerateBusyException;
+import com.junseok.ocmaru.global.exception.ClusterGenerateBusyResult;
 import com.junseok.ocmaru.global.exception.ConflictException;
 import com.junseok.ocmaru.global.exception.ErrorResult;
 import com.junseok.ocmaru.global.exception.NotFoundException;
@@ -9,17 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
   private static final Logger log = LoggerFactory.getLogger(
     GlobalExceptionHandler.class
   );
@@ -62,7 +65,9 @@ public class GlobalExceptionHandler {
     log.warn("Unreadable request body", e);
     return ResponseEntity
       .status(HttpStatus.BAD_REQUEST)
-      .body(new ErrorResult("MALFORMED_JSON", "요청 본문 형식이 올바르지 않습니다."));
+      .body(
+        new ErrorResult("MALFORMED_JSON", "요청 본문 형식이 올바르지 않습니다.")
+      );
   }
 
   @ExceptionHandler(ConflictException.class)
@@ -71,6 +76,22 @@ public class GlobalExceptionHandler {
     return ResponseEntity
       .status(HttpStatus.CONFLICT)
       .body(new ErrorResult("CONFLICT", e.getMessage()));
+  }
+
+  @ExceptionHandler(ClusterGenerateBusyException.class)
+  public ResponseEntity<ClusterGenerateBusyResult> handleClusterGenerateBusy(
+    ClusterGenerateBusyException e
+  ) {
+    log.warn("Cluster generate busy: {}", e.getMessage());
+    return ResponseEntity
+      .status(HttpStatus.CONFLICT)
+      .body(
+        new ClusterGenerateBusyResult(
+          "CLUSTER_GENERATE_BUSY",
+          e.getMessage(),
+          e.getActiveJobId()
+        )
+      );
   }
 
   @ExceptionHandler(NotFoundException.class)
@@ -82,7 +103,9 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(UnauthorizedException.class)
-  public ResponseEntity<ErrorResult> handleUnauthorized(UnauthorizedException e) {
+  public ResponseEntity<ErrorResult> handleUnauthorized(
+    UnauthorizedException e
+  ) {
     log.warn("Unauthorized: {}", e.getMessage(), e);
     return ResponseEntity
       .status(HttpStatus.UNAUTHORIZED)
@@ -90,7 +113,9 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(AccessDeniedException.class)
-  public ResponseEntity<ErrorResult> handleAccessDenied(AccessDeniedException e) {
+  public ResponseEntity<ErrorResult> handleAccessDenied(
+    AccessDeniedException e
+  ) {
     log.warn("Access denied: {}", e.getMessage(), e);
     return ResponseEntity
       .status(HttpStatus.FORBIDDEN)
@@ -98,7 +123,9 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(NoResourceFoundException.class)
-  public ResponseEntity<ErrorResult> handleNoResource(NoResourceFoundException e) {
+  public ResponseEntity<ErrorResult> handleNoResource(
+    NoResourceFoundException e
+  ) {
     log.warn("No resource found: {}", e.getMessage());
     return ResponseEntity
       .status(HttpStatus.NOT_FOUND)
