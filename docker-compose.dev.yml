@@ -19,12 +19,8 @@ services:
     volumes:
       - ./:/workspace/server
       - gradle-cache:/root/.gradle
-    environment:
-      - BASE_URL=http://localhost:8080
-      - FRONTEND_URL=http://localhost:5173
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - SPRING_PROFILES_ACTIVE=local,mock-openai
+    env_file:
+      - .env.local
     depends_on:
       - redis
 
