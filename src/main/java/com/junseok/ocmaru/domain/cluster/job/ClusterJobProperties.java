@@ -15,8 +15,8 @@ public class ClusterJobProperties {
   private String workerUrl = "";
 
   /**
-   * 비어 있으면 내부 워커 경로 인증을 생략(로컬 전용).
-   * 설정 시 /api/internal/worker/** 요청에 X-Internal-Api-Key 헤더 필요.
+   * 메인 서버: 비어 있으면 /api/internal/worker/** 에 X-Internal-Api-Key 검증 생략(로컬).
+   * {@code worker} 프로필: 필수(기동 시 검증 + 헤더 일치).
    */
   private String internalApiKey = "";
 

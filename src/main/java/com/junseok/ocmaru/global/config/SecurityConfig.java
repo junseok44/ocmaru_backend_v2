@@ -3,6 +3,8 @@ package com.junseok.ocmaru.global.config;
 import com.junseok.ocmaru.global.security.JwtAuthenticationConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,6 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Profile("!worker")
 public class SecurityConfig {
 
   private final OAuth2Config.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
@@ -28,6 +31,7 @@ public class SecurityConfig {
 
   /** JWT 기반 인증: Bearer 토큰을 검증해서 SecurityContext를 구성. */
   @Bean
+  @Order(2)
   public SecurityFilterChain securityFilterChain(HttpSecurity http)
     throws Exception {
     http
