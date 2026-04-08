@@ -9,6 +9,7 @@ import com.junseok.ocmaru.domain.cluster.repository.ClusterGenerateJobRepository
 import com.junseok.ocmaru.global.exception.ClusterGenerateBusyException;
 import com.junseok.ocmaru.global.exception.NotFoundException;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,10 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ClusterGenerateJobService {
 
-  private static final EnumSet<ClusterGenerateJobStatus> ACTIVE_STATUSES =
-    EnumSet.of(ClusterGenerateJobStatus.QUEUED, ClusterGenerateJobStatus.RUNNING);
+  private static final EnumSet<ClusterGenerateJobStatus> ACTIVE_STATUSES = EnumSet.of(
+    ClusterGenerateJobStatus.QUEUED,
+    ClusterGenerateJobStatus.RUNNING
+  );
 
   private final ClusterJobDispatcher clusterJobDispatcher;
   private final ClusterGenerateGlobalLockRepository clusterGenerateGlobalLockRepository;
@@ -39,10 +42,9 @@ public class ClusterGenerateJobService {
         )
       );
 
-    Optional<ClusterGenerateJob> activeGlobal =
-      clusterGenerateJobRepository.findFirstByStatusInOrderByCreatedAtAsc(
-        ACTIVE_STATUSES
-      );
+    Optional<ClusterGenerateJob> activeGlobal = clusterGenerateJobRepository.findFirstByStatusInOrderByCreatedAtAsc(
+      ACTIVE_STATUSES
+    );
     if (activeGlobal.isPresent()) {
       ClusterGenerateJob active = activeGlobal.get();
       if (active.getUserId().equals(userId)) {
@@ -74,6 +76,13 @@ public class ClusterGenerateJobService {
     }
 
     return new ClusterGenerateJobAcceptedDto(jobId);
+  }
+
+  public List<ClusterGenerateJobStatusDto> getJobStatuses(Long userId) {
+    List<ClusterGenerateJob> jobs = clusterGenerateJobRepository.findByUserId(
+      userId
+    );
+    return jobs.stream().map(ClusterGenerateJobStatusDto::new).toList();
   }
 
   public ClusterGenerateJobStatusDto getJobStatus(Long userId, UUID jobId) {
