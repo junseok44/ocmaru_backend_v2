@@ -4,6 +4,7 @@ HELP.md
 .env
 .env.prod
 .env.local
+.env.worker
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
