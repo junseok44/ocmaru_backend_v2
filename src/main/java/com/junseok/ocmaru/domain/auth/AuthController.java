@@ -9,6 +9,7 @@ import com.junseok.ocmaru.domain.auth.dto.LocalRegisterResponse;
 import com.junseok.ocmaru.domain.auth.dto.TokenRefreshRequestDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
 import com.junseok.ocmaru.global.config.OAuthProperties;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(
+  name = "인증",
+  description = "회원가입, 로그인, 토큰 갱신, OAuth, 로그인 사용자 정보"
+)
 @RequiredArgsConstructor
 public class AuthController {
 

@@ -1,5 +1,6 @@
 package com.junseok.ocmaru.domain.notification.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/notifications")
+@Tag(name = "알림", description = "알림 목록(현재 스텁)")
 public class NotificationController {
 
   @GetMapping("")

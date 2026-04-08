@@ -5,6 +5,7 @@ import com.junseok.ocmaru.domain.user.dto.UserListItemDto;
 import com.junseok.ocmaru.domain.user.dto.UserStatsResponseDto;
 import com.junseok.ocmaru.domain.user.dto.UserUpdateRequestDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
+@Tag(name = "사용자", description = "회원 목록·통계·수정·삭제 (/users)")
 public class UsersController {
 
   private final UserService userService;

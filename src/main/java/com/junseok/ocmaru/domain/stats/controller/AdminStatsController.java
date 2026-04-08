@@ -4,6 +4,7 @@ import com.junseok.ocmaru.domain.stats.dto.ActiveAgendaStatDto;
 import com.junseok.ocmaru.domain.stats.dto.DashboardStatsResponseDto;
 import com.junseok.ocmaru.domain.stats.dto.WeeklyOpinionStatDto;
 import com.junseok.ocmaru.domain.stats.service.AdminStatsService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "관리자", description = "대시보드·주간 의견·활성 안건 통계 (ADMIN)")
 public class AdminStatsController {
 
   private final AdminStatsService adminStatsService;

@@ -1,6 +1,7 @@
 package com.junseok.ocmaru.domain.category.controller;
 
 import com.junseok.ocmaru.domain.category.dto.CategoryResponseDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/categories")
+@Tag(name = "카테고리", description = "안건 카테고리 목록(정적)")
 public class CategoryController {
 
   @GetMapping("")

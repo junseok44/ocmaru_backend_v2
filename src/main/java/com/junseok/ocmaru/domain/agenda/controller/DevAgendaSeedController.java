@@ -11,6 +11,7 @@ import com.junseok.ocmaru.domain.cluster.repository.ClusterRepository;
 import com.junseok.ocmaru.domain.opinion.repository.OpinionClusterRepository;
 import com.junseok.ocmaru.domain.user.User;
 import com.junseok.ocmaru.domain.user.UserRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/dev/agendas")
+@Tag(
+  name = "개발 전용",
+  description = "로컬/스테이징 시드 데이터 (운영 노출 시 주의)"
+)
 @RequiredArgsConstructor
 public class DevAgendaSeedController {
 

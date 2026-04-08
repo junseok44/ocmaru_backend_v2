@@ -5,6 +5,7 @@ import com.junseok.ocmaru.domain.report.dto.ReportResponseDto;
 import com.junseok.ocmaru.domain.report.dto.ReportUpdateRequestDto;
 import com.junseok.ocmaru.domain.report.entity.ReportStatus;
 import com.junseok.ocmaru.domain.report.service.ReportService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/reports")
+@Tag(name = "신고", description = "콘텐츠 신고 생성·조회·상태 변경")
 public class ReportController {
 
   private final ReportService reportService;
