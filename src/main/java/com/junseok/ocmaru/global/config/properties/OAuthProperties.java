@@ -1,4 +1,4 @@
-package com.junseok.ocmaru.global.config;
+package com.junseok.ocmaru.global.config.properties;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * OAuth(Google, Kakao) 환경변수 주입용 설정.
  * <p>
  * 환경변수: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, KAKAO_CLIENT_ID, KAKAO_CLIENT_SECRET,
- * BASE_URL(또는 PUBLIC_URL, HOST). application.properties에서 ${VAR:} 형태로 바인딩됨.
+ * BASE_URL(백엔드 공개 URL·OAuth redirect용), FRONTEND_URL(로그인 후 리다이렉트용 SPA origin).
  */
 @Getter
 @Setter
@@ -18,15 +18,15 @@ import org.springframework.stereotype.Component;
 public class OAuthProperties {
 
   /**
-   * OAuth 콜백 등에 사용할 서버 기준 URL.
-   * 우선순위: BASE_URL → PUBLIC_URL → HOST → http://localhost:8080
-   * 끝의 슬래시는 제거되어 사용됨.
+   * 백엔드(이 Spring 앱)의 공개 URL. Google/Kakao에 등록한 redirect URI
+   * ({@code {baseUrl}/login/oauth2/code/{registrationId}})를 만들 때 사용한다.
+   * 프론트 주소(FRONTEND_URL)와는 역할이 다르다.
    */
   private String baseUrl = "http://localhost:8080";
 
   /**
-   * OAuth 로그인 성공 후 프런트엔드로 리다이렉트할 기준 URL.
-   * 예: 개발 환경 http://localhost:5173, 운영 환경 https://example.com
+   * 로그인 성공 후 브라우저를 보낼 프런트엔드 origin (토큰 쿼리로 붙여 리다이렉트).
+   * {@link #baseUrl}과 동일하게 두면 안 되는 경우가 많다 (API는 8080, SPA는 5173 등).
    */
   private String frontendRedirectUrl = "http://localhost:8080";
 
@@ -35,7 +35,9 @@ public class OAuthProperties {
     if (baseUrl == null || baseUrl.isBlank()) {
       return "http://localhost:8080";
     }
-    return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    return baseUrl.endsWith("/")
+      ? baseUrl.substring(0, baseUrl.length() - 1)
+      : baseUrl;
   }
 
   /** 프런트 리다이렉트 URL 정규화 (끝 슬래시 제거). */
@@ -52,9 +54,11 @@ public class OAuthProperties {
   private Kakao kakao = new Kakao();
 
   public boolean isGoogleEnabled() {
-    return google != null
-        && hasText(google.getClientId())
-        && hasText(google.getClientSecret());
+    return (
+      google != null &&
+      hasText(google.getClientId()) &&
+      hasText(google.getClientSecret())
+    );
   }
 
   public boolean isKakaoEnabled() {
@@ -68,6 +72,7 @@ public class OAuthProperties {
   @Getter
   @Setter
   public static class Google {
+
     private String clientId = "";
     private String clientSecret = "";
   }
@@ -75,6 +80,7 @@ public class OAuthProperties {
   @Getter
   @Setter
   public static class Kakao {
+
     private String clientId = "";
     private String clientSecret = "";
   }

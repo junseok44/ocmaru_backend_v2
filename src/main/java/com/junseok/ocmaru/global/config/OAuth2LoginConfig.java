@@ -1,33 +1,30 @@
 package com.junseok.ocmaru.global.config;
 
 import com.junseok.ocmaru.domain.auth.OAuthUserService;
-import com.junseok.ocmaru.domain.user.User;
+import com.junseok.ocmaru.global.config.properties.OAuthProperties;
 import com.junseok.ocmaru.global.security.JwtTokenService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.Authentication;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * OAuth2 클라이언트 등록 및 로그인 성공 처리.
- * OAuthProperties 기준으로 활성화된 제공자만 등록함.
+ * Google/Kakao 중 하나라도 설정된 경우에만 빈을 등록한다 ({@link OAuth2ClientsEnabledCondition}).
  */
 @Configuration
+@Profile("!worker")
+@Conditional(OAuth2ClientsEnabledCondition.class)
 @RequiredArgsConstructor
-public class OAuth2Config {
+public class OAuth2LoginConfig {
 
   private static final String KAKAO_AUTH_URI =
     "https://kauth.kakao.com/oauth/authorize";
@@ -50,6 +47,12 @@ public class OAuth2Config {
     }
     if (oAuthProperties.isKakaoEnabled()) {
       registrations.add(kakaoRegistration(baseUrl));
+    }
+
+    if (registrations.isEmpty()) {
+      throw new IllegalStateException(
+        "OAuth2ClientsEnabledCondition 과 불일치: 등록할 클라이언트가 없습니다."
+      );
     }
 
     return new InMemoryClientRegistrationRepository(registrations);
@@ -101,82 +104,5 @@ public class OAuth2Config {
       oAuthUserService,
       jwtTokenService
     );
-  }
-
-  /**
-   * OAuth2 로그인 성공 시 DB 사용자 조회/생성 후 JWT를 발급해서 프론트 로그인 페이지로 리다이렉트.
-   */
-  public static class OAuth2AuthenticationSuccessHandler
-    extends SimpleUrlAuthenticationSuccessHandler {
-
-    private final OAuthProperties oAuthProperties;
-    private final OAuthUserService oAuthUserService;
-    private final JwtTokenService jwtTokenService;
-
-    public OAuth2AuthenticationSuccessHandler(
-      OAuthProperties oAuthProperties,
-      OAuthUserService oAuthUserService,
-      JwtTokenService jwtTokenService
-    ) {
-      this.oAuthProperties = oAuthProperties;
-      this.oAuthUserService = oAuthUserService;
-      this.jwtTokenService = jwtTokenService;
-      setDefaultTargetUrl(oAuthProperties.getFrontendRedirectUrlNormalized() + "/login");
-    }
-
-    @Override
-    public void onAuthenticationSuccess(
-      HttpServletRequest request,
-      HttpServletResponse response,
-      Authentication authentication
-    ) throws IOException {
-      if (!(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
-        getRedirectStrategy()
-          .sendRedirect(request, response, getDefaultTargetUrl());
-        return;
-      }
-
-      String registrationId = resolveRegistrationIdFromRequest(request);
-      if (registrationId == null) {
-        getRedirectStrategy()
-          .sendRedirect(request, response, getDefaultTargetUrl());
-        return;
-      }
-
-      try {
-        User user = oAuthUserService.findOrCreate(oauth2User, registrationId);
-        String accessToken = jwtTokenService.createAccessToken(user);
-        String refreshToken = jwtTokenService.createRefreshToken(user);
-        String redirectUrl = UriComponentsBuilder
-          .fromUriString(
-            oAuthProperties.getFrontendRedirectUrlNormalized() + "/login"
-          )
-          .queryParam("accessToken", accessToken)
-          .queryParam("refreshToken", refreshToken)
-          .build()
-          .toUriString();
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-        return;
-      } catch (Exception e) {
-        // 실패 시 토큰 발급 없이 기본 로그인 화면으로 이동
-      }
-
-      getRedirectStrategy()
-        .sendRedirect(request, response, getDefaultTargetUrl());
-    }
-
-    /** 콜백 URL /login/oauth2/code/{registrationId} 에서 registrationId 추출. */
-    private String resolveRegistrationIdFromRequest(
-      HttpServletRequest request
-    ) {
-      String path = request.getRequestURI();
-      String prefix = "/login/oauth2/code/";
-      if (path != null && path.startsWith(prefix)) {
-        String rest = path.substring(prefix.length());
-        int slash = rest.indexOf('/');
-        return slash >= 0 ? rest.substring(0, slash) : rest;
-      }
-      return null;
-    }
   }
 }
