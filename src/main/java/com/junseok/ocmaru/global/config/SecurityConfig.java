@@ -1,6 +1,7 @@
 package com.junseok.ocmaru.global.config;
 
 import com.junseok.ocmaru.global.security.JwtAuthenticationConverter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -17,15 +18,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("!worker")
 public class SecurityConfig {
 
-  private final OAuth2Config.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final ObjectProvider<OAuth2AuthenticationSuccessHandler>
+    oAuth2AuthenticationSuccessHandlerProvider;
   private final JwtAuthenticationConverter jwtAuthenticationConverter;
 
   public SecurityConfig(
-    OAuth2Config.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+    ObjectProvider<OAuth2AuthenticationSuccessHandler> oAuth2AuthenticationSuccessHandlerProvider,
     JwtAuthenticationConverter jwtAuthenticationConverter
   ) {
-    this.oAuth2AuthenticationSuccessHandler =
-      oAuth2AuthenticationSuccessHandler;
+    this.oAuth2AuthenticationSuccessHandlerProvider =
+      oAuth2AuthenticationSuccessHandlerProvider;
     this.jwtAuthenticationConverter = jwtAuthenticationConverter;
   }
 
@@ -62,15 +64,19 @@ public class SecurityConfig {
           // .authenticated()
           .anyRequest()
           .permitAll()
-      )
-      .oauth2Login(oauth2 -> {
-        oauth2.successHandler(oAuth2AuthenticationSuccessHandler);
-      })
-      .oauth2ResourceServer(oauth2 ->
-        oauth2.jwt(jwt ->
-          jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
-        )
       );
+
+    OAuth2AuthenticationSuccessHandler oAuth2Handler =
+      oAuth2AuthenticationSuccessHandlerProvider.getIfAvailable();
+    if (oAuth2Handler != null) {
+      http.oauth2Login(oauth2 -> oauth2.successHandler(oAuth2Handler));
+    }
+
+    http.oauth2ResourceServer(oauth2 ->
+      oauth2.jwt(jwt ->
+        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
+      )
+    );
     return http.build();
   }
 }

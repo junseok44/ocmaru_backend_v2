@@ -8,7 +8,7 @@ import com.junseok.ocmaru.domain.auth.dto.LocalRegisterRequestDto;
 import com.junseok.ocmaru.domain.auth.dto.LocalRegisterResponse;
 import com.junseok.ocmaru.domain.auth.dto.TokenRefreshRequestDto;
 import com.junseok.ocmaru.global.annotation.CurrentUser;
-import com.junseok.ocmaru.global.config.OAuthProperties;
+import com.junseok.ocmaru.global.config.properties.OAuthProperties;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
