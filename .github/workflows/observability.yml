@@ -1,0 +1,67 @@
+# Prometheus / Grafana 전용 이미지 빌드·푸시 (앱 배포와 분리)
+# 변경 감지: observability/** 또는 이 워크플로 파일
+#
+# 필요 Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN
+# 이미지: docker.io/newtonjjang/ocmaru_prometheus, docker.io/newtonjjang/ocmaru_grafana
+
+name: Observability images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "observability/**"
+      - ".github/workflows/observability.yml"
+  workflow_dispatch:
+
+env:
+  DOCKER_NS: newtonjjang
+
+jobs:
+  prometheus:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./observability/prometheus
+          file: ./observability/prometheus/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            docker.io/${{ env.DOCKER_NS }}/ocmaru_prometheus:latest
+            docker.io/${{ env.DOCKER_NS }}/ocmaru_prometheus:${{ github.sha }}
+
+  grafana:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./observability
+          file: ./observability/grafana/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            docker.io/${{ env.DOCKER_NS }}/ocmaru_grafana:latest
+            docker.io/${{ env.DOCKER_NS }}/ocmaru_grafana:${{ github.sha }}

@@ -40,29 +40,29 @@ services:
       - server
 
   prometheus:
-    image: prom/prometheus:v2.55.0
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=7d"
+    build:
+      context: ./observability/prometheus
+      dockerfile: Dockerfile
+    environment:
+      PROMETHEUS_SCRAPE_TARGET: server:8080
     ports:
       - "9090:9090"
     volumes:
-      - ../server/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     depends_on:
       - server
 
   grafana:
-    image: grafana/grafana:11.2.0
+    build:
+      context: ./observability
+      dockerfile: grafana/Dockerfile
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GRAFANA_PROMETHEUS_DATASOURCE_URL: http://prometheus:9090
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - ../server/observability/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ../server/observability/grafana/dashboards:/var/lib/grafana/dashboards/ocmaru:ro
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
