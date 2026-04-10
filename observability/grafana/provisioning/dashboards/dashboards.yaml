@@ -6,6 +6,6 @@ providers:
     disableDeletion: false
     editable: true
     options:
-      path: /var/lib/grafana/dashboards/ocmaru
+      path: /etc/grafana/dashboards/ocmaru
       foldersFromFilesStructure: true
 

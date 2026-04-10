@@ -5,5 +5,5 @@ mkdir -p /etc/grafana/provisioning/datasources /etc/grafana/provisioning/dashboa
 sed "s|__PROMETHEUS_URL__|${URL}|g" /etc/grafana/templates/datasources/datasource.yml.template \
   > /etc/grafana/provisioning/datasources/datasource.yml
 cp /etc/grafana/templates/dashboards/dashboards.yaml /etc/grafana/provisioning/dashboards/dashboards.yaml
-chown -R 472:472 /etc/grafana/provisioning
+chown -R 472:472 /etc/grafana/provisioning /etc/grafana/dashboards
 exec /run.sh
