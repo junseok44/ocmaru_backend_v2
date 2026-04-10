@@ -43,8 +43,8 @@ services:
     build:
       context: ./observability/prometheus
       dockerfile: Dockerfile
-    environment:
-      PROMETHEUS_SCRAPE_TARGET: server:8080
+    env_file:
+      - ./observability/prometheus/.env.local
     ports:
       - "9090:9090"
     volumes:
@@ -56,10 +56,8 @@ services:
     build:
       context: ./observability
       dockerfile: grafana/Dockerfile
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GRAFANA_PROMETHEUS_DATASOURCE_URL: http://prometheus:9090
+    env_file:
+      - ./observability/grafana/.env.local
     ports:
       - "3000:3000"
     volumes:
