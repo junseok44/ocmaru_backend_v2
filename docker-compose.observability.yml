@@ -1,0 +1,35 @@
+# Prometheus + Grafana 만 실행 (VM 등에서 앱과 분리 배포)
+# 사용: docker compose -f docker-compose.observability.yml up -d
+#
+# Spring 앱이 다른 호스트/컨테이너에 있으면 observability/prometheus/.env.local 에
+# PROMETHEUS_SCRAPE_TARGET=호스트:8080 형태로 지정 (예: host.docker.internal:8080, 192.168.x.x:8080)
+# Grafana 데이터소스는 기본 http://prometheus:9090 (같은 compose 네트워크)
+
+services:
+  prometheus:
+    build:
+      context: ./observability/prometheus
+      dockerfile: Dockerfile
+    env_file:
+      - ./observability/prometheus/.env.local
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+
+  grafana:
+    build:
+      context: ./observability
+      dockerfile: grafana/Dockerfile
+    env_file:
+      - ./observability/grafana/.env.local
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:
