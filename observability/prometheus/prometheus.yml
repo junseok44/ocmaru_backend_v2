@@ -1,3 +1,8 @@
+# 공식 prom/prometheus 이미지에 파일 마운트로 쓸 때 예시.
+# docker-compose.dev 는 observability/prometheus/Dockerfile 기반 이미지를 쓰며,
+# 스크랩 대상은 환경변수 PROMETHEUS_SCRAPE_TARGET (기본 server:8080) 로 설정한다.
+# 템플릿: prometheus.yml.template
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s

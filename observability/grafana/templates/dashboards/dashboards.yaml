@@ -8,4 +8,3 @@ providers:
     options:
       path: /etc/grafana/dashboards/ocmaru
       foldersFromFilesStructure: true
-
