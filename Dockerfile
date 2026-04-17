@@ -1,7 +1,7 @@
 FROM node:20-bookworm-slim AS client-builder
 WORKDIR /workspace/client
 
-# Build context must be the ocmaru root: docker build -f server/Dockerfile .
+# Build context is this repository root (server/).
 COPY client/package*.json ./
 RUN npm ci
 COPY client/ ./
@@ -10,7 +10,7 @@ RUN npm run build
 FROM eclipse-temurin:17-jdk-jammy AS server-builder
 WORKDIR /workspace/server
 
-COPY server/ ./
+COPY . ./
 COPY --from=client-builder /workspace/client/dist/ ./src/main/resources/static/
 
 RUN chmod +x ./gradlew && ./gradlew bootJar --no-daemon

@@ -49,3 +49,7 @@ out/
 
 ### Local runtime logs (p6spy sql-trace, etc.) ###
 logs/
+
+# client (vendored into this repo)
+client/node_modules/
+client/dist/

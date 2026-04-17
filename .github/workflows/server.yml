@@ -9,13 +9,14 @@ on:
   push:
     branches: [main]
     paths:
+      - "client/**"
       - "src/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
       - "gradlew"
       - "gradlew.bat"
-      - "Dockerfile.server"
+      - "Dockerfile"
       - ".github/workflows/server.yml"
   workflow_dispatch:
 
@@ -40,7 +41,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.server
+          file: ./Dockerfile
           platforms: linux/amd64
           push: true
           tags: |
