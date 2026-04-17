@@ -1,12 +1,15 @@
 # Prometheus + Grafana 만 실행 (VM 등에서 앱과 분리 배포)
-# 사용: docker compose -f docker-compose.observability.yml up -d
+# 사용: docker network create ocmaru-public   # 최초 1회
+#       docker compose -f docker-compose.observability.yml up -d
 #
-# Spring 앱이 다른 호스트/컨테이너에 있으면 observability/prometheus/.env.local 에
-# PROMETHEUS_SCRAPE_TARGET=호스트:8080 형태로 지정 (예: host.docker.internal:8080, 192.168.x.x:8080)
-# Grafana 데이터소스는 기본 http://prometheus:9090 (같은 compose 네트워크)
+# docker-compose.dev.yml 과 동시에 띄울 때: 위 두 스택 모두 ocmaru-public 에 붙음.
+# PROMETHEUS_SCRAPE_TARGET=server:8080 이면 dev 스택의 server 컨테이너로 스크랩됨.
+# 앱만 다른 호스트에 있으면 PROMETHEUS_SCRAPE_TARGET=호스트:포트 (예: host.docker.internal:8080)
+# Grafana 데이터소스는 기본 http://prometheus:9090
 
 services:
   prometheus:
+    image: docker.io/newtonjjang/ocmaru_prometheus:latest
     build:
       context: ./observability/prometheus
       dockerfile: Dockerfile
@@ -16,8 +19,11 @@ services:
       - "9090:9090"
     volumes:
       - prometheus-data:/prometheus
+    networks:
+      - ocmaru-public
 
   grafana:
+    image: docker.io/newtonjjang/ocmaru_grafana:latest
     build:
       context: ./observability
       dockerfile: grafana/Dockerfile
@@ -29,7 +35,13 @@ services:
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
+    networks:
+      - ocmaru-public
 
 volumes:
   prometheus-data:
   grafana-data:
+
+networks:
+  ocmaru-public:
+    external: true

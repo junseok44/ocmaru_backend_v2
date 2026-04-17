@@ -1,3 +1,8 @@
+# 앱 개발 스택. 관측 스택과 같은 Docker 네트워크를 쓰려면 최초 1회:
+#   docker network create ocmaru-public
+# 그 다음: docker compose -f docker-compose.observability.yml up -d
+# 이때 Prometheus 의 PROMETHEUS_SCRAPE_TARGET=server:8080 으로 스크랩 가능
+
 services:
   redis:
     image: redis:7-alpine
@@ -6,6 +11,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
+    networks:
+      - ocmaru-public
 
   server:
     image: eclipse-temurin:17-jdk-jammy
@@ -23,6 +30,8 @@ services:
       - .env.local
     depends_on:
       - redis
+    networks:
+      - ocmaru-public
 
   client:
     image: node:20-bookworm-slim
@@ -38,8 +47,14 @@ services:
       - client-node-modules:/workspace/client/node_modules
     depends_on:
       - server
+    networks:
+      - ocmaru-public
 
 volumes:
   gradle-cache:
   client-node-modules:
   redis-data:
+
+networks:
+  ocmaru-public:
+    external: true
