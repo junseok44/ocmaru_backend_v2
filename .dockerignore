@@ -11,3 +11,7 @@ build/
 application-local.yml
 application-local.properties
 /Todo.md
+
+# client (inside this repo)
+client/node_modules
+client/dist

@@ -1,7 +1,6 @@
 FROM node:20-bookworm-slim AS client-builder
 WORKDIR /workspace/client
 
-# Build context is this repository root (server/).
 COPY client/package*.json ./
 RUN npm ci
 COPY client/ ./
@@ -22,3 +21,4 @@ COPY --from=server-builder /workspace/server/build/libs/*.jar /app/app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
