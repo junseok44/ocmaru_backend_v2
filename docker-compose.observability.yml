@@ -9,6 +9,7 @@
 
 services:
   prometheus:
+    image: docker.io/newtonjjang/ocmaru_prometheus:latest
     build:
       context: ./observability/prometheus
       dockerfile: Dockerfile
@@ -22,6 +23,7 @@ services:
       - ocmaru-public
 
   grafana:
+    image: docker.io/newtonjjang/ocmaru_grafana:latest
     build:
       context: ./observability
       dockerfile: grafana/Dockerfile
